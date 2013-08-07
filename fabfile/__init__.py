@@ -339,7 +339,7 @@ def setup_db(sample='n'):
 @require_settings                    
 def setup(sample='n'):
     """Setup new application deployment.  Run only once per project."""    
-    execute(setup_project, django=django)
+    execute(setup_project, django='n')
     execute(env.db.setup)
     execute(env.db.seed, sample=sample)      
     execute(_link_apache_conf)
