@@ -1,0 +1,9 @@
+/* CSS STYLES */
+
+.center {text-align: center;}
+
+#query {width: 400px;}
+
+.breadcrumb > li + li:before {padding: 0 5px;color: #cccccc;content: "/\00a0";}
+
+#histogram {min-height: 400px;}

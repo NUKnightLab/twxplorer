@@ -1,0 +1,10 @@
+Flask==0.10.1
+Jinja2==2.7
+MarkupSafe==0.18
+PyYAML==3.10
+Werkzeug==0.9.3
+itsdangerous==0.22
+nltk==2.0.4
+pymongo==2.5.2
+tweepy==2.1
+wsgiref==0.1.2

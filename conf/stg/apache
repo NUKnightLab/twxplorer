@@ -1,0 +1,14 @@
+<VirtualHost *:80>
+    ServerName twxplorer.knilab.com
+    ServerAlias twxplorer.knilab.com
+    ServerAdmin admin@knilab.com
+    ErrorLog /var/log/apache2/twxplorer.log
+
+    LogLevel info
+
+    SetEnvIf X-Forwarded-Protocol "^https$" HTTPS=on
+
+    WSGIDaemonProcess twxplorer display-name=%{GROUP} maximum-requests=10000
+    WSGIProcessGroup twxplorer
+    WSGIScriptAlias / /home/apps/sites/twxplorer/conf/stg/wsgi.py
+</VirtualHost>
