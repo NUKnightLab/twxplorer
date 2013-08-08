@@ -243,7 +243,8 @@ def search():
             stem_counter.update(stem_set)
             
             tweet_dict['session_id'] = session_id
-            tweet_dict['stems'] = list(stem_set)            
+            tweet_dict['stems'] = list(stem_set)    
+            tweet_dict['embed'] = twutil.format_text(tweet_dict)       
             tweets.append(tweet_dict)
                       
         # Update session
@@ -313,19 +314,30 @@ def results(session_id):
         
         # Process tweets
         stem_counter = Counter()
-        tweets = []        
-    
+        tweets = []           
+        id_set = set()
+        
         for tweet in cursor:  
             stem_counter.update(set(tweet['stems']))
-                                
+            
+            if tweet['id_str'] in id_set:
+                continue
+            id_set.add(tweet['id_str'])
+              
+            if 'retweeted_status' in tweet:
+                retweeted_id = tweet['retweeted_status']['id_str']
+                if retweeted_id in id_set:
+                    continue              
+                id_set.add(retweeted_id)
+            
             tweets.append({
-                'text': twutil.format_text(tweet),
+                'text': tweet['embed'],
                 'user_name': tweet['user']['name'],
                 'user_screen_name': tweet['user']['screen_name'],
                 'id_str': tweet['id_str'],
                 'created_at': tweet['created_at']           
             })
-            
+                        
         return _jsonify(
             query=search_r['query'],
             stem_map=session_r['stem_map'],

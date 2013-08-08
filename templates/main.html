@@ -267,9 +267,10 @@ function show_history() {
                 s += '</div></div></div>';           
             }
             
-            $('#history_accordion').html(s);
-            console.log(s);
-            
+            if(!data.searches.length) {
+                s = '<p>No past searches found</p>';  
+            } 
+            $('#history_accordion').html(s);            
             $('#history_modal').modal('show');
         }
     );
