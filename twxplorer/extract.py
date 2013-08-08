@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import string
+import HTMLParser
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem.snowball import PorterStemmer
@@ -24,11 +25,15 @@ _re_punctuation = re.compile(r'[%s]+' % string.punctuation.replace('@', ''))
 # maximum gram degree (e.g. 2 = bigrams)
 _ngram_degree = 2
 
+# htmlparser
+_htmlparser = HTMLParser.HTMLParser()
+
 # stemmer
 _stemmer = PorterStemmer()
 
 def normalize(s):
     """Return normalized version of string."""
+    s = _htmlparser.unescape(s)
     s = s.encode('ascii', 'replace').replace('?', '').lower()
     s = _re_punctuation.sub(' ', s)
     return s.strip()
