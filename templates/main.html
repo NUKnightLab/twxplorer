@@ -12,7 +12,7 @@
                     <span class="caret"></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a id="past_searches" href="javascript:void(0);" onclick="not_implemented();">View past searches</a></li>
+                    <li><a id="past_searches" href="javascript:void(0);" onclick="show_history();">View past searches</a></li>
                     <li><a id="exclude_words" href="javascript:void(0);" onclick="not_implemented();">Exclude words</a></li>
                 </ul>
             </div>    
@@ -53,13 +53,32 @@
     </div>
 </div>
 
+<div id="history_modal" class="modal fade">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Search History</h4>
+            </div>
+            <div class="modal-body">
+                <div class="accordion" id="history_accordion">
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 {% endblock %}
 
 {% block script %}
 
 <script type="text/javascript">
 
-var _search_id = '';
 var _session_id = '';
 var _stem_map = {};
 var _filter = '';       // current filter, for drill down
@@ -98,12 +117,12 @@ function do_ajax(url, data, on_error, on_success) {
 
 function set_filter(filter) {
     _filter = filter;
-    filter_results();    
+    filter_results(_session_id);    
 }
 
 function add_filter(stem) {
     _filter += (_filter) ? ','+stem : stem;
-    filter_results();
+    filter_results(_session_id);
 }
 
 function set_breadcrumb() {          
@@ -177,9 +196,11 @@ function show_tweets(tweets) {
 }
 
 //
-// Get histogram and tweets for _filter
+// Get histogram and tweets for session_id using _filter
 //
-function filter_results(callback) {   
+function filter_results(session_id, callback) { 
+    _session_id = session_id;
+    
     set_breadcrumb(); 
       
     $('#tweets').html('');
@@ -192,7 +213,10 @@ function filter_results(callback) {
                 callback();
             }
         },
-        function(data) {                
+        function(data) {       
+            _stem_map = data.stem_map;
+            $('#query').val(data.query);
+                     
             show_histogram(data.stem_counts);
             show_tweets(data.tweets);                          
             if(callback) {
@@ -202,9 +226,64 @@ function filter_results(callback) {
     );
 }
 
+function load_session(session_id, callback) {
+    _filter = '';
+    filter_results(session_id, callback);  
+}
+
+
+//
+// History
+//
+
+function show_history() {
+    do_ajax('/main/history/', 
+        {},
+        function(err) {
+            show_error('Error getting search history ('+err+')');
+        },
+        function(data) {
+            var s = '';
+            
+            for(var i = 0, searches = data.searches; i < searches.length; i++) {
+                var search = searches[i];
+                var collapse_id = 'collapse_'+search._id;
+                
+                s += '<div class="accordion-group">'
+                    // ---
+                    + '<div class="accordion-heading">'
+                    + '<a class="accordion-toggle" data-toggle="collapse" data-parent="#history_accordion" href="#'+collapse_id+'">'
+                    + search.query + '</a>'
+                    + '</div>'
+                    // ---
+                    + '<div id="'+collapse_id+'" class="accordion-body collapse">'
+                    + '<div class="accordion-inner">';
+                              
+                for(var j = 0, sessions = search.sessions; j < sessions.length; j++) {
+                    s += '<p><a href="javascript:void(0);" data-dismiss="modal" onclick="load_session(\''+sessions[j]._id+'\');">'
+                        +sessions[j].dt+'</a></p>';
+                }          
+                
+                s += '</div></div></div>';           
+            }
+            
+            $('#history_accordion').html(s);
+            console.log(s);
+            
+            $('#history_modal').modal('show');
+        }
+    );
+}
+
+
 $(function() {
 
     $('#progress_modal').modal({
+        keyboard: false,
+        show: false
+    })
+    
+    $('#history_modal').modal({
         keyboard: false,
         show: false
     })
@@ -218,6 +297,7 @@ $(function() {
         })
         .focus();
 
+    // New search
     $('#search').click(function(event) {
         var query = $('#query').val().trim();
         if(!query) {
@@ -233,13 +313,8 @@ $(function() {
                 show_error(error);
                 $('#progress_modal').modal('hide');
             },
-            function(data) {
-                _search_id = data.search._id;
-                _session_id = data.session._id;
-                _stem_map = data.session.stem_map;
-                _filter = '';    
-                             
-                filter_results(function() {
+            function(data) {   
+                load_session(data.session._id, function() {
                     $('#progress_modal').modal('hide');
                 });
             }

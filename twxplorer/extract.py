@@ -33,7 +33,6 @@ _stemmer = PorterStemmer()
 
 def normalize(s):
     """Return normalized version of string."""
-    s = _htmlparser.unescape(s)
     s = s.encode('ascii', 'replace').replace('?', '').lower()
     s = _re_punctuation.sub(' ', s)
     return s.strip()
@@ -46,9 +45,11 @@ def grams_from_string(s, stopwords=None):
     """Get list of grams from string"""
     stopwords = stopwords or _stopwords
     grams = []
-    no_url = _re_url.sub(' . ', s)
+    
+    s = _re_url.sub(' . ', s)
+    s = _htmlparser.unescape(s)
 
-    for clause in _re_clause.split(no_url):
+    for clause in _re_clause.split(s):
         tokens = normalize(clause).split()
         if tokens:
             for n in range(1, _ngram_degree+1):

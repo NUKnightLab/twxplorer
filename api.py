@@ -145,7 +145,7 @@ def auth_verify():
 @app.route('/logout/')
 def logout():
     """
-    Logout
+    Logout by cleaning session
     """
     for key in ['request_token_key', 'request_token_secret', \
         'access_token_key', 'access_token_secret', 'username']:
@@ -162,6 +162,7 @@ def logout():
 def index(name=''):
     """Main page"""    
     error = ''    
+    
     try:
         if is_logged_in():
             return redirect(url_for('main'))
@@ -254,7 +255,7 @@ def search():
         # Save tweets
         _tweets.insert(tweets)   
         
-        return _jsonify(error=error, search=search_r, session=session_r)
+        return _jsonify(error=error, session=session_r)
     except tweepy.TweepError, e:
         error = e.message[0]['message']
         traceback.print_exc()
@@ -263,8 +264,18 @@ def search():
         error = str(e)
         traceback.print_exc()
         return _jsonify(error=error)
-            
+
         
+"""@app.route("/main/test/<tweet_id>/", methods=['GET', 'POST'])
+def test(tweet_id):
+    r = _tweets.find_one({'id_str': tweet_id})
+    print 'text = ', r['text']
+    grams = extract.grams_from_string(r['text'], [])
+    stems = extract.stems_from_grams(grams)
+ 
+    return _jsonify(text=r['text'])"""
+    
+                    
 @app.route("/main/search/<session_id>/", methods=['GET', 'POST'])
 def results(session_id):
     """
@@ -282,18 +293,23 @@ def results(session_id):
         if not session_r:
             raise Exception('Session not found')
             
+        # Find search
+        search_r = _search.find_one({'_id': bson.ObjectId(session_r['search_id'])})
+        if not search_r:
+            raise Exception('Search not found')
+            
         # Find tweets
         filter = request.args.get('filter')
         if filter:
-            cursor = _tweets.find({
-                'session_id': session_id, 
-                'stems': {'$all': filter.split(',')}
-            })
+            cursor = _tweets.find(
+                {'session_id': session_id, 'stems': {'$all': filter.split(',')}},
+                sort=[('dt', pymongo.DESCENDING)]
+            )
         else:
-            ignore_stems = []
-            cursor = _tweets.find({
-                'session_id': session_id,
-            })
+            cursor = _tweets.find(
+                {'session_id': session_id}, 
+                sort=[('dt', pymongo.DESCENDING)]
+            )
         
         # Process tweets
         stem_counter = Counter()
@@ -310,7 +326,55 @@ def results(session_id):
                 'created_at': tweet['created_at']           
             })
             
-        return _jsonify(stem_counts=stem_counter.most_common(), tweets=tweets)
+        return _jsonify(
+            query=search_r['query'],
+            stem_map=session_r['stem_map'],
+            stem_counts=stem_counter.most_common(), 
+            tweets=tweets
+        )
+    except Exception, e:
+        error = str(e)
+        traceback.print_exc()
+        return _jsonify(error=error)
+
+
+@app.route("/main/history/", methods=['GET', 'POST'])
+def history():
+    """
+    Get search history, grouped by search -> session
+    """
+    error = ''
+    
+    if not is_logged_in():
+        return redirect(url_for('index'))
+
+    try:
+        searches = []
+        
+        search_cursor = _search.find(
+            {'username': session['username']},
+            sort=[('query', pymongo.ASCENDING)]
+        )
+        for search_r in search_cursor:
+            search_r['_id'] = str(search_r['_id'])
+            search_r['sessions'] = []
+           
+            session_cursor = _session.find(
+                {'search_id': search_r['_id']},
+                fields=['_id', 'dt'],
+                sort=[('dt', pymongo.DESCENDING)]
+            )
+            for session_r in session_cursor:
+                session_r['_id'] = str(session_r['_id'])
+                session_r['dt'] = datetime.datetime \
+                    .strptime(session_r['dt'], '%Y-%m-%dT%H:%M:%S.%f') \
+                    .strftime('%b %d %Y %H:%M:%S')
+                    
+                search_r['sessions'].append(session_r)
+                
+            searches.append(search_r)
+                        
+        return _jsonify(searches=searches)
     except Exception, e:
         error = str(e)
         traceback.print_exc()
