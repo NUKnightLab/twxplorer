@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+{% endblock %}
+
+
 {% block content %}
 
 <div id='control_bar' class="row-fluid">
@@ -34,11 +38,14 @@
     </div>
 </div>
 
-<div class="row-fluid" style="position: relative;">
-    <div id='histogram' class="span6">
-        <!-- histogram goes here -->
+<div class="row-fluid">   
+    <div id='histogram' class="span4">
+        <!-- histogram of terms goes here -->
     </div>
-    <div id='tweets' class="span6">
+    <div id='hashtags' class="span3">
+        <!-- hashtags -->
+    </div>
+    <div id='tweets' class="span5">
         <!-- tweets go here -->
     </div>
 </div>
@@ -125,20 +132,24 @@ function add_filter(stem) {
     filter_results(_session_id);
 }
 
+function get_term(s) {
+    return (s[0] == '#') ? s : _stem_map[s][0][0];
+}
+
 function set_breadcrumb() {          
     if(_filter) { 
         var s = '<li><a href="javascript:void(0);" onclick="set_filter(\'\');">All</a></li>';
                
         stems = _filter.split(',');
         var last = stems.pop();
+        
         for(var i = 0; i < stems.length; i++) {
             var filter = stems.slice(0, i+1).join(','); 
-            var terms = _stem_map[stems[i]][0][0];
             s += '<li><a href="javascript:void(0);" onclick="set_filter(\''+filter+'\');">'
-                +terms
+                + get_term(stems[i])
                 +'</a></li>';
         }        
-        s += '<li class="active">'+_stem_map[last][0][0]+'</li>';    
+        s += '<li class="active">'+get_term(last)+'</li>';    
         $('#breadcrumb').html(s).show();        
     } else {
         var s = '<li class="active">All</li>';
@@ -149,19 +160,14 @@ function set_breadcrumb() {
 //
 // Show histogram, hiding any elements of _filter
 //
-function show_histogram(stem_counts) {
+function show_histogram(stem_counts, filter_elements) {
     var s = '';
-    var filter_stems = [];
-    
-    if(_filter) { 
-        filter_stems = _filter.split(',');
-    }
-    
+        
     for(var i = 0; i < stem_counts.length; i++) {
         stem = stem_counts[i][0];
         count = stem_counts[i][1];
         
-        if($.inArray(stem, filter_stems) < 0) {
+        if($.inArray(stem, filter_elements) < 0) {
             terms = [];
             for(var j=0, m=_stem_map[stem]; j < m.length; j++) {
                 terms.push(m[j][0]);
@@ -172,7 +178,26 @@ function show_histogram(stem_counts) {
         }
     }
 
-    $('#histogram').html(s);     
+    $('#histogram').html(s);        
+ }
+
+//
+// Show hashtags, hiding any elements of _filter
+//
+function show_hashtags(hashtag_counts, filter_elements) {
+    var s = '';
+    
+    for(var i = 0; i < hashtag_counts.length; i++) {
+        hashtag = hashtag_counts[i][0];
+        count = hashtag_counts[i][1];
+
+        if($.inArray(hashtag, filter_elements) < 0) {        
+            s += '<p><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
+                + hashtag+'</a> ('+count+')</p>';
+        }
+    }
+
+    $('#hashtags').html(s);     
 }
 
 //
@@ -200,7 +225,12 @@ function show_tweets(tweets) {
 //
 function filter_results(session_id, callback) { 
     _session_id = session_id;
-    
+
+    var filter_elements = []
+    if(_filter) { 
+        filter_elements = _filter.split(',');
+    }
+
     set_breadcrumb(); 
       
     $('#tweets').html('');
@@ -217,8 +247,10 @@ function filter_results(session_id, callback) {
             _stem_map = data.stem_map;
             $('#query').val(data.query);
                      
-            show_histogram(data.stem_counts);
-            show_tweets(data.tweets);                          
+            show_histogram(data.stem_counts, filter_elements);
+            show_hashtags(data.hashtag_counts, filter_elements);
+            show_tweets(data.tweets);           
+                           
             if(callback) {
                 callback();
             }
@@ -278,7 +310,7 @@ function show_history() {
 
 
 $(function() {
-
+    
     $('#progress_modal').modal({
         keyboard: false,
         show: false

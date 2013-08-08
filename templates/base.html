@@ -30,7 +30,9 @@
   <!-- End Google Analytics -->
   <!-- Note: You must include the Blueline CDN stylesheet -->
   <link rel="stylesheet" href="//cdn.knightlab.com/libs/blueline/latest/css/blueline.min.css">
+  <!-- SITE-SPECIFIC -->
   <link rel="stylesheet" href="{{ static_url }}css/style.css">
+  {% block extrahead %}{% endblock %}
 </head>
 <body>
 

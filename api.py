@@ -229,7 +229,7 @@ def search():
         tweets = []        
         for tweet in response:
             tweet_dict = twutil.status_to_dict(tweet)
-            
+                       
             grams = extract.grams_from_string(tweet_dict['text'], stopwords)
             stems = extract.stems_from_grams(grams)
             
@@ -241,9 +241,13 @@ def search():
             
             stem_set = set(stems)
             stem_counter.update(stem_set)
-            
+
+            hashtag_set = set(['#'+x['text'].lower() \
+                for x in tweet_dict['entities']['hashtags']])
+                        
             tweet_dict['session_id'] = session_id
             tweet_dict['stems'] = list(stem_set)    
+            tweet_dict['hashtags'] = list(hashtag_set)
             tweet_dict['embed'] = twutil.format_text(tweet_dict)       
             tweets.append(tweet_dict)
                       
@@ -281,7 +285,9 @@ def test(tweet_id):
 def results(session_id):
     """
     Get histogram and tweets
-    @filter: comma-delimited list of stems to filter by
+    @filter: comma-delimited list of elements to filter by
+        if element starts with '#', then it is a hashtag
+        else, it is a stem
     """
     error = ''
 
@@ -300,26 +306,31 @@ def results(session_id):
             raise Exception('Search not found')
             
         # Find tweets
+        params = {'session_id': session_id}
+        
         filter = request.args.get('filter')
         if filter:
-            cursor = _tweets.find(
-                {'session_id': session_id, 'stems': {'$all': filter.split(',')}},
-                sort=[('dt', pymongo.DESCENDING)]
-            )
-        else:
-            cursor = _tweets.find(
-                {'session_id': session_id}, 
-                sort=[('dt', pymongo.DESCENDING)]
-            )
+            elements = filter.split(',')
+            stems = [x for x in elements if not x.startswith('#')]            
+            if stems:
+                params['stems'] = {'$all': stems}
+                
+            hashtags = [x for x in elements if x.startswith('#')]
+            if hashtags:
+                params['hashtags'] = {'$all': hashtags}
+        
+        cursor = _tweets.find(params, sort=[('dt', pymongo.DESCENDING)])
         
         # Process tweets
         stem_counter = Counter()
+        hashtag_counter = Counter()
         tweets = []           
         id_set = set()
         
         for tweet in cursor:  
-            stem_counter.update(set(tweet['stems']))
-            
+            stem_counter.update(tweet['stems'])
+            hashtag_counter.update(tweet['hashtags'])
+           
             if tweet['id_str'] in id_set:
                 continue
             id_set.add(tweet['id_str'])
@@ -337,11 +348,12 @@ def results(session_id):
                 'id_str': tweet['id_str'],
                 'created_at': tweet['created_at']           
             })
-                        
+                   
         return _jsonify(
             query=search_r['query'],
             stem_map=session_r['stem_map'],
             stem_counts=stem_counter.most_common(), 
+            hashtag_counts=hashtag_counter.most_common(),
             tweets=tweets
         )
     except Exception, e:
