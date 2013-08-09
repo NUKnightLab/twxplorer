@@ -25,7 +25,7 @@ Install [MongoDB](http://www.mongodb.org/downloads) and start the Mongo server b
     # Start the Flask development server
     python api.py
     
-Visit the the website at `http://127.0.0.1:5000`
+Visit the the website at [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
    
     
