@@ -94,12 +94,12 @@ function not_implemented() {
     alert('Not implemented yet!');
 }
 
-function show_error(error) {
-    var s = '<div class="alert alert-danger">'
+function show_error(error) {        
+    $('#control_bar').after(
+        '<div class="alert alert-danger">'
         + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
-        + error + '</div>';
-        
-    $('#control_bar').after(s);
+        + error + '</div>'
+    );
 }
 
 function do_ajax(url, data, on_error, on_success) {

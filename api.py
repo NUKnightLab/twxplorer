@@ -217,25 +217,18 @@ def search():
         session_id = str(session_r['_id'])
         
         # Process tweets
-        # THIS WORKS...
-        #i = 0
-        #for tweet in tweepy.Cursor(api.search, q=query, result_type='recent', count=100, include_entities=True).items():
-        #    print i, tweet.text
-        #    i += 1
-        
-      
-        response = api.search(
-            q=query, result_type='recent', count=100, include_entities=True)
-
         stem_map = defaultdict(Counter)
         stem_counter = Counter()
-       
-        # Add query terms to stopwords
+
         stopwords = extract._stopwords.copy()
         stopwords.update([x.lower() for x in query.split()])
-        
+
         tweets = []        
-        for tweet in response:
+
+        for tweet in tweepy.Cursor(api.search, q=query, count=100, \
+            result_type='popular', include_entities=True) \
+            .items(limit=settings.TWITTER_SEARCH_LIMIT):
+            
             tweet_dict = twutil.status_to_dict(tweet)
                        
             grams = extract.grams_from_string(tweet_dict['text'], stopwords)
