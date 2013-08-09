@@ -31,9 +31,11 @@
 </div>
 {% endif %}
 
-<div class="filter-container">
-    <ul id="filter_list" class="filter-list">
-    </ul>
+<div class="row-fluid">   
+    <div class="span12 filter-container">
+        <ul id="filter_list" class="filter-list">
+        </ul>
+    </div>
 </div>
 
 <!--
@@ -326,8 +328,10 @@ function show_history() {
                     + '<div class="accordion-inner">';
                               
                 for(var j = 0, sessions = search.sessions; j < sessions.length; j++) {
-                    s += '<p><a href="javascript:void(0);" data-dismiss="modal" onclick="load_session(\''+sessions[j]._id+'\');">'
-                        +sessions[j].dt+'</a></p>';
+                    s += '<p>'
+                        + '<a href="javascript:void(0);" data-dismiss="modal" onclick="load_session(\''+sessions[j]._id+'\');">'
+                        + sessions[j].dt+'</a>'
+                        + '</p>';
                 }          
                 
                 s += '</div></div></div>';           

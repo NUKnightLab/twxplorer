@@ -8,7 +8,7 @@ from nltk.corpus import stopwords
 from nltk.stem.snowball import PorterStemmer
 
 _stopwords = set(stopwords.words('english'))
-_stopwords.update(['via', 'rt'])
+_stopwords.update(['via', 'rt', 'thru'])
 
 # single letters, or all punctuation/numbers
 _re_stoplist = re.compile(r'^([a-z]|[%s\d]+)$' % string.punctuation)
@@ -19,8 +19,14 @@ _re_url = re.compile(r'http[^ ]+', re.I)
 # match clause delimiters
 _re_clause = re.compile(r'[.?!:;,"\r\n]')
 
+# user mentions and hashtags
+_re_entity = re.compile(r'(@\w{1,15}|#\w{1,15})')
+
 # punctuation except '@'
 _re_punctuation = re.compile(r'[%s]+' % string.punctuation.replace('@', ''))
+
+# extra space
+_re_extraspace = re.compile(r'( )+')
 
 # maximum gram degree (e.g. 2 = bigrams)
 _ngram_degree = 2
@@ -34,8 +40,18 @@ _stemmer = PorterStemmer()
 def normalize(s):
     """Return normalized version of string."""
     s = s.encode('ascii', 'replace').replace('?', '').lower()
-    s = _re_punctuation.sub(' ', s)
-    return s.strip()
+    
+    norm = ''
+    for item in _re_entity.split(s):
+        if _re_entity.match(item):
+            if item.startswith('@'):
+                norm += item
+            else:
+                norm += item[1:]
+        else:
+            norm += _re_punctuation.sub(' ', item)
+
+    return _re_extraspace.sub(' ', norm).strip()
 
 def stoplist_iter(it, stopwords):
     """Return True if any element should be stoplisted."""
@@ -47,7 +63,6 @@ def grams_from_string(s, stopwords=None):
     grams = []
     
     s = _re_url.sub(' . ', s)
-    # note: also tweepy.utils.unescape_html
     s = _htmlparser.unescape(s)
 
     for clause in _re_clause.split(s):
