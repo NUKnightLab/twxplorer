@@ -194,15 +194,17 @@ def search():
         query = request.args.get('query')
         if not query:
             raise Exception('No query found')
+        query_lower = query.lower()
         
         # Get api object
         api = tweepy.API(get_oauth())
                             
         # Get/create search record
-        param = {'username': session['username'], 'query': query}
+        param = {'username': session['username'], 'query_lower': query_lower}
         search_r = _search.find_one(param)
         if not search_r:
             search_r = param
+            search_r['query'] = query
             search_r['_id'] = _search.save(search_r, manipulate=True)
         search_id = str(search_r['_id'])
         
@@ -221,7 +223,7 @@ def search():
         stem_counter = Counter()
 
         stopwords = extract._stopwords.copy()
-        stopwords.update([x.lower() for x in query.split()])
+        stopwords.update([x.lower() for x in query_lower.split()])
 
         tweets = []        
 
