@@ -4,6 +4,41 @@
 
 #query {width: 400px;}
 
+.filter-container {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    padding: 0;
+    width: 100%;
+    height: auto !important;
+    height: 1%;
+    background-color: #fff;
+}
+
+.filter-list {margin: 0;padding: 0;min-height: 28px;}
+
+.filter-list li {
+    float: left;
+    position: relative;
+    list-style: none;
+    margin: 0 8px 4px 0;
+    padding: 2px 6px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background-color: #efefef;
+    color: #333;
+    cursor: default;
+    font-size: .9em;
+}
+
+.filter-container a {padding-left: 6px;cursor: pointer;}
+
 .breadcrumb > li + li:before {padding: 0 5px;color: #cccccc;content: "/\00a0";}
 
 #histogram {min-height: 400px;}
+

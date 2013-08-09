@@ -31,12 +31,19 @@
 </div>
 {% endif %}
 
+<div class="filter-container">
+    <ul id="filter_list" class="filter-list">
+    </ul>
+</div>
+
+<!--
 <div class="row-fluid">
     <div class="span12">
         <ul id='breadcrumb' class="breadcrumb" style="display: none;">
         </ul>
     </div>
 </div>
+-->
 
 <div class="row-fluid">   
     <div id='histogram' class="span4">
@@ -121,6 +128,13 @@ function do_ajax(url, data, on_error, on_success) {
     });
 }
 
+function get_term(s) {
+    if(s[0] == '#') {
+        return s;
+    }       
+    return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(',');
+}
+
 function set_filter(filter) {
     _filter = filter;
     filter_results(_session_id);    
@@ -131,14 +145,19 @@ function add_filter(stem) {
     filter_results(_session_id);
 }
 
-function get_term(s) {
-    return (s[0] == '#') ? s : _stem_map[s][0][0];
+function remove_filter(stem) {
+    var stems = _filter.split(',');
+    var stem_index = $.inArray(stem, stems);
+    if(stem_index > -1) {
+        stems.splice(stem_index, 1);
+    }
+    set_filter(stems.join(','));
 }
 
 function set_breadcrumb() {          
-    if(_filter) { 
+    if(_filter) {               
+    /*      
         var s = '<li><a href="javascript:void(0);" onclick="set_filter(\'\');">All</a></li>';
-               
         stems = _filter.split(',');
         var last = stems.pop();
         
@@ -150,9 +169,24 @@ function set_breadcrumb() {
         }        
         s += '<li class="active">'+get_term(last)+'</li>';    
         $('#breadcrumb').html(s).show();        
+*/
+        var s= '';
+        
+        stems = _filter.split(',');
+        for(var i = 0; i < stems.length; i++) {
+            s += '<li>'+get_term(stems[i])
+                + '<a href="javascript:void(0);" onclick="remove_filter(\''+stems[i]+'\');">'
+                + '<i class="icon-remove"></i></a>'
+                + '</li>';      
+        }
+        
+        $('#filter_list').html(s).show();
     } else {
+        /*
         var s = '<li class="active">All</li>';
         $('#breadcrumb').html(s).show();
+        */
+        $('#filter_list').html('').show();
     }     
 }
 
