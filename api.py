@@ -121,7 +121,7 @@ def auth():
     Redirect to twitter for user authorization
     """
     oauth = get_oauth()
-    auth_url = oauth.get_authorization_url()
+    auth_url = oauth.get_authorization_url()    
     session['request_token_key'] = oauth.request_token.key
     session['request_token_secret'] = oauth.request_token.secret
     return redirect(auth_url)
@@ -195,11 +195,9 @@ def search():
         if not query:
             raise Exception('No query found')
         
+        # Get api object
         api = tweepy.API(get_oauth())
-        
-        response = api.search(
-            q=query, result_type='recent', count=100, include_entities=True)
-                    
+                            
         # Get/create search record
         param = {'username': session['username'], 'query': query}
         search_r = _search.find_one(param)
@@ -219,6 +217,16 @@ def search():
         session_id = str(session_r['_id'])
         
         # Process tweets
+        # THIS WORKS...
+        #i = 0
+        #for tweet in tweepy.Cursor(api.search, q=query, result_type='recent', count=100, include_entities=True).items():
+        #    print i, tweet.text
+        #    i += 1
+        
+      
+        response = api.search(
+            q=query, result_type='recent', count=100, include_entities=True)
+
         stem_map = defaultdict(Counter)
         stem_counter = Counter()
        

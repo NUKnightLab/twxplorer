@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block extrahead %}
+<script type="application/javascript" src="http://platform.twitter.com/widgets.js" charset="utf-8"></script>
 {% endblock %}
-
 
 {% block content %}
 
@@ -83,7 +83,6 @@
 {% endblock %}
 
 {% block script %}
-
 <script type="text/javascript">
 
 var _session_id = '';
@@ -214,10 +213,11 @@ function show_tweets(tweets) {
             + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
             + '</blockquote>';           
     }
-    s += '<script type="application/javascript" src="http://platform.twitter.com/widgets.js" charset="utf-8">';
-    s += '</script'+'>';
                 
     $('#tweets').html(s);
+    
+    // Style tweets...
+    twttr.widgets.load();
 }
 
 //

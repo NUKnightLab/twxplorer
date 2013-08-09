@@ -47,6 +47,7 @@ def grams_from_string(s, stopwords=None):
     grams = []
     
     s = _re_url.sub(' . ', s)
+    # note: also tweepy.utils.unescape_html
     s = _htmlparser.unescape(s)
 
     for clause in _re_clause.split(s):
