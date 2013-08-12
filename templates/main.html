@@ -47,7 +47,8 @@
     <div id='column1' class="span8"">
         <div class="row-fluid spaced">   
             <div id='histogram' class="span7 frame">
-            <!-- terms go here -->     
+            <!-- terms go here --> 
+   
             </div>
             <div id='hashtags' class="span5 frame">
             <!-- hashtags go here -->     
@@ -187,26 +188,66 @@ function set_breadcrumb() {
 //
 // Show histogram, hiding any elements of _filter
 //
+/*
+       <div class='term'>
+            <span class="count">500</span>
+            <label>one</label>    
+            <div class="bar">&nbsp;</div>
+        </div>
+        <div>
+            <span class="count">500</span>
+            <label>two</label>    
+            <div class="bar" style="width: 50%;">&nbsp;</div>
+        </div>
+*/
 function show_histogram(stem_counts, filter_elements) {
-    var s = '';
-        
-    for(var i = 0; i < stem_counts.length; i++) {
-        stem = stem_counts[i][0];
-        count = stem_counts[i][1];
-        
-        if($.inArray(stem, filter_elements) < 0) {
-            terms = [];
-            for(var j=0, m=_stem_map[stem]; j < m.length; j++) {
-                terms.push(m[j][0]);
-            }
+    $('#histogram').unbind('scroll.terms');
+    
 
-            s += '<p><a href="javascript:void(0);" onclick="add_filter(\''+stem+'\')">'
-                + terms.join(', ')+'</a> ('+count+')</p>';
+    var s = '';
+    var max_count = 0;
+    
+    if(stem_counts.length) {
+        
+        for(var i = 0; i < stem_counts.length; i++) {
+            stem = stem_counts[i][0];
+            count = stem_counts[i][1];
+            
+            if($.inArray(stem, filter_elements) < 0) {
+                max_count = max_count || count;
+                pct = (count * 100) / max_count;
+                
+                terms = [];
+                for(var j=0, m=_stem_map[stem]; j < m.length; j++) {
+                    terms.push(m[j][0]);
+                }
+                s += '<div class="term" onclick="add_filter(\''+stem+'\');">'
+                    + '<span class="count">'+count+'</span>'
+                    + '<div class="inner">'
+                    + '<label>'+terms.join(', ')+'</label>'
+                    + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
+                    + '</div>'
+                    + '</div>';
+    /*
+                s += '<p><a href="javascript:void(0);" onclick="add_filter(\''+stem+'\')">'
+                    + terms.join(', ')+'</a> ('+count+')</p>';
+    */
+            }
         }
     }
-
+    
     $('#histogram').html(s);        
  }
+
+function on_scroll_terms(event) {
+    var offset = $('#terms_loading').offset().top - $('#histogram').offset().top;
+    var height = $('#histogram').innerHeight();
+    
+    if(offset < height) {
+        show_histogram();
+    }
+}
+
 
 //
 // Show hashtags, hiding any elements of _filter
@@ -243,7 +284,7 @@ function show_urls(url_counts) {
 // Show tweets
 //
 function show_tweets() {
-    $('#tweets').unbind('scroll.tweets')
+    $('#tweets').unbind('scroll.tweets');
 
     var s = '';
     var max_index = Math.min(tweet_next_index+tweet_page_size, _tweets.length);
@@ -278,6 +319,7 @@ function on_scroll_tweets(event) {
         show_tweets();
     }
 }
+
 
 //
 // Get histogram and tweets for session_id using _filter
