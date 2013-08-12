@@ -226,11 +226,10 @@ def search():
         stopwords.update([x.lower() for x in query_lower.split()])
 
         tweets = []        
-
+        n = 0
         for tweet in tweepy.Cursor(api.search, q=query, count=100, \
-            result_type='popular', include_entities=True) \
-            .items(limit=settings.TWITTER_SEARCH_LIMIT):
-            
+            result_type='recent', include_entities=True) \
+            .items(limit=settings.TWITTER_SEARCH_LIMIT):            
             tweet_dict = twutil.status_to_dict(tweet)
                        
             grams = extract.grams_from_string(tweet_dict['text'], stopwords)
@@ -253,7 +252,8 @@ def search():
             tweet_dict['hashtags'] = list(hashtag_set)
             tweet_dict['embed'] = twutil.format_text(tweet_dict)       
             tweets.append(tweet_dict)
-                      
+            n += 1
+            
         # Update session
         session_r['stem_counts'] = stem_counter.most_common()
         for stem, c in stem_map.iteritems():
@@ -327,12 +327,16 @@ def results(session_id):
         # Process tweets
         stem_counter = Counter()
         hashtag_counter = Counter()
+        url_counter = Counter()
+        
         tweets = []           
         id_set = set()
         
         for tweet in cursor:  
             stem_counter.update(tweet['stems'])
             hashtag_counter.update(tweet['hashtags'])
+            url_counter.update([entity['expanded_url'].lower() \
+                for entity in tweet['entities']['urls']])
            
             if tweet['id_str'] in id_set:
                 continue
@@ -351,12 +355,13 @@ def results(session_id):
                 'id_str': tweet['id_str'],
                 'created_at': tweet['created_at']           
             })
-                   
+                           
         return _jsonify(
             query=search_r['query'],
             stem_map=session_r['stem_map'],
             stem_counts=stem_counter.most_common(), 
             hashtag_counts=hashtag_counter.most_common(),
+            url_counts=url_counter.most_common(),
             tweets=tweets
         )
     except Exception, e:

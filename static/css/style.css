@@ -16,7 +16,7 @@
     list-style: none;
     margin: 0 8px 4px 0;
     padding: 2px 6px;
-    border: 1px solid #aaa;
+    border: 1px solid #ccc;
     border-radius: 4px;
     background-color: #efefef;
     color: #333;
@@ -24,9 +24,44 @@
     font-size: .9em;
 }
 
+.filter-list li .close {margin-left: 4px;}
+
 .filter-container a {padding-left: 6px;cursor: pointer;}
+
+#tweet_count {font-style: italic;font-size: 0.8em;text-align: right;}
 
 .breadcrumb > li + li:before {padding: 0 5px;color: #cccccc;content: "/\00a0";}
 
-#histogram {min-height: 400px;}
+.frame {
+    border: 1px solid #aaa;
+    border-radius: 4px;
+}
+
+.padded {
+    padding-bottom: 14px;
+}
+
+#histogram {
+    height: 400px;
+    overflow: auto;
+    padding: 4px;
+}
+
+#hashtags {
+    height: 400px;
+    overflow: auto;
+    padding: 4px;
+}
+
+#urls {
+    height: 200px;
+    overflow: auto;
+    padding: 4px;
+}
+
+
+#tweets {
+    height: 614px;
+    overflow: auto;
+}
 

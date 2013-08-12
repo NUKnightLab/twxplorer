@@ -31,10 +31,13 @@
 </div>
 {% endif %}
 
-<div class="row-fluid">   
-    <div class="span12 filter-container">
+<div class="row-fluid padded">   
+    <div class="span9 filter-container">
         <ul id="filter_list" class="filter-list">
         </ul>
+    </div>
+    <div id="tweet_count" class="span3">
+ 
     </div>
 </div>
 
@@ -48,13 +51,19 @@
 -->
 
 <div class="row-fluid">   
-    <div id='histogram' class="span4">
-        <!-- histogram of terms goes here -->
+    <div id='column1' class="span8"">
+        <div class="row-fluid padded">   
+            <div id='histogram' class="span7 frame">
+            </div>
+            <div id='hashtags' class="span5 frame">
+            </div>
+        </div>
+        <div class="row-fluid">
+            <div id="urls" class="span12 frame"></div>
+        </div>
     </div>
-    <div id='hashtags' class="span3">
-        <!-- hashtags -->
-    </div>
-    <div id='tweets' class="span5">
+    
+    <div id='tweets' class="span4">
         <!-- tweets go here -->
     </div>
 </div>
@@ -158,36 +167,17 @@ function remove_filter(stem) {
 
 function set_breadcrumb() {          
     if(_filter) {               
-    /*      
-        var s = '<li><a href="javascript:void(0);" onclick="set_filter(\'\');">All</a></li>';
-        stems = _filter.split(',');
-        var last = stems.pop();
-        
-        for(var i = 0; i < stems.length; i++) {
-            var filter = stems.slice(0, i+1).join(','); 
-            s += '<li><a href="javascript:void(0);" onclick="set_filter(\''+filter+'\');">'
-                + get_term(stems[i])
-                +'</a></li>';
-        }        
-        s += '<li class="active">'+get_term(last)+'</li>';    
-        $('#breadcrumb').html(s).show();        
-*/
         var s= '';
         
         stems = _filter.split(',');
         for(var i = 0; i < stems.length; i++) {
             s += '<li>'+get_term(stems[i])
-                + '<a href="javascript:void(0);" onclick="remove_filter(\''+stems[i]+'\');">'
-                + '<i class="icon-remove"></i></a>'
+                + '<button class="close" onclick="remove_filter(\''+stems[i]+'\');">&times;</button>'
                 + '</li>';      
         }
         
         $('#filter_list').html(s).show();
     } else {
-        /*
-        var s = '<li class="active">All</li>';
-        $('#breadcrumb').html(s).show();
-        */
         $('#filter_list').html('').show();
     }     
 }
@@ -235,6 +225,20 @@ function show_hashtags(hashtag_counts, filter_elements) {
     $('#hashtags').html(s);     
 }
 
+function show_urls(url_counts) {
+    var s = '';
+    
+    for(var i = 0; i < url_counts.length; i++) {
+        url = url_counts[i][0];
+        count = url_counts[i][1];
+
+        s += '<p><a href="'+url+'" target="_blank">'+ url+'</a> ('+count+')</p>';
+    }
+
+    $('#urls').html(s);     
+}
+
+
 //
 // Show tweets
 //
@@ -269,6 +273,7 @@ function filter_results(session_id, callback) {
 
     set_breadcrumb(); 
       
+    $('#tweet_count').html('');
     $('#tweets').html('');
         
     do_ajax('/main/search/'+_session_id+'/', 
@@ -285,6 +290,9 @@ function filter_results(session_id, callback) {
                      
             show_histogram(data.stem_counts, filter_elements);
             show_hashtags(data.hashtag_counts, filter_elements);
+            show_urls(data.url_counts);
+            
+            $('#tweet_count').html('Found '+data.tweets.length+' tweets');
             show_tweets(data.tweets);           
                            
             if(callback) {
