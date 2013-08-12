@@ -39,3 +39,6 @@
 
 #tweets {height: 614px;overflow: auto;}
 #tweets_loading {margin: 8px 0;text-align: center;}
+
+#history_accordion .accordion-heading input[type=checkbox] {float: right;margin: 10px 15px 10px 10px;}
+#history_accordion .accordion-inner input[type=checkbox] {float: right;margin: 6px 0 10px 10px;}
