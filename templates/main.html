@@ -7,7 +7,7 @@
 {% block content %}
 
 <div id='control_bar' class="row-fluid">
-    <div class="span12">
+    <div class="span8">
         <form class="form-inline">
             <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter your search query" />
             <div class="btn-group">
@@ -22,6 +22,9 @@
             </div>    
         </form>
     </div>
+    <div id='username' class="span4">
+    Logged in as @{{ session.username }}
+    </div>
 </div>
 
 {% if error %}
@@ -31,40 +34,35 @@
 </div>
 {% endif %}
 
-<div class="row-fluid padded">   
+<div class="row-fluid spaced">   
     <div class="span9 filter-container">
         <ul id="filter_list" class="filter-list">
         </ul>
     </div>
     <div id="tweet_count" class="span3">
- 
     </div>
 </div>
 
-<!--
-<div class="row-fluid">
-    <div class="span12">
-        <ul id='breadcrumb' class="breadcrumb" style="display: none;">
-        </ul>
-    </div>
-</div>
--->
 
 <div class="row-fluid">   
     <div id='column1' class="span8"">
-        <div class="row-fluid padded">   
+        <div class="row-fluid spaced">   
             <div id='histogram' class="span7 frame">
+            <!-- terms go here -->     
             </div>
             <div id='hashtags' class="span5 frame">
+            <!-- hashtags go here -->     
             </div>
         </div>
         <div class="row-fluid">
-            <div id="urls" class="span12 frame"></div>
+            <div id="urls" class="span12 frame">
+            <!-- urls go here -->     
+            </div>
         </div>
     </div>
     
     <div id='tweets' class="span4">
-        <!-- tweets go here -->
+        <!-- tweets go here -->       
     </div>
 </div>
 
@@ -101,11 +99,18 @@
 {% endblock %}
 
 {% block script %}
+<script src="{{ STATIC_URL }}js/waypoints.min.js"></script>
+
 <script type="text/javascript">
 
 var _session_id = '';
 var _stem_map = {};
+var _tweets = [];
+
 var _filter = '';       // current filter, for drill down
+
+var tweet_page_size = 10;
+var tweet_next_index = 0;
 
 
 function not_implemented() {
@@ -231,10 +236,8 @@ function show_urls(url_counts) {
     for(var i = 0; i < url_counts.length; i++) {
         url = url_counts[i][0];
         count = url_counts[i][1];
-
         s += '<p><a href="'+url+'" target="_blank">'+ url+'</a> ('+count+')</p>';
     }
-
     $('#urls').html(s);     
 }
 
@@ -242,22 +245,44 @@ function show_urls(url_counts) {
 //
 // Show tweets
 //
-function show_tweets(tweets) {
-    var s = '';
+
+function show_tweets() {
+    console.log('show_tweets', _tweets.length);
     
-    for(var i = 0; i < tweets.length; i++) {
-        var tweet = tweets[i];
+    $('#tweets').unbind('scroll.tweets')
+
+    var s = '';
+    var max_index = Math.min(tweet_next_index+tweet_page_size, _tweets.length);
+    
+    for(var i = tweet_next_index; i < max_index; i++) {
+        var tweet = _tweets[i];
         
         s += '<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden">'
             + '<p>'+tweet.text+'</p>&mdash; '+tweet.user_name + ' (@'+tweet.user_screen_name+')'
             + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
             + '</blockquote>';           
-    }
-                
-    $('#tweets').html(s);
+    } 
+
+    $('#tweets_loading').remove();
+    $('#tweets').append(s);
     
-    // Style tweets...
+    tweet_next_index = i;
+    
+    if(tweet_next_index < (_tweets.length - 1)) {
+        $('#tweets').append('<div id="tweets_loading"><i class="icon-spinner icon-spin"></i></div>');
+        $('#tweets').bind('scroll.tweets', on_scroll_tweets)
+    } 
+    
     twttr.widgets.load();
+}
+
+function on_scroll_tweets(event) {
+    var offset = $('#tweets_loading').offset().top - $('#tweets').offset().top;
+    var height = $('#tweets').innerHeight();
+    
+    if(offset < height) {
+        show_tweets();
+    }
 }
 
 //
@@ -272,9 +297,9 @@ function filter_results(session_id, callback) {
     }
 
     set_breadcrumb(); 
-      
-    $('#tweet_count').html('');
-    $('#tweets').html('');
+    
+    $('#histogram, #hashtags, #urls, #tweets, #tweet_count').html('');
+    $('#tweets').unbind('scroll.tweets')   
         
     do_ajax('/main/search/'+_session_id+'/', 
         {filter: _filter},
@@ -286,6 +311,9 @@ function filter_results(session_id, callback) {
         },
         function(data) {       
             _stem_map = data.stem_map;
+            _tweets = data.tweets;
+            tweet_next_index = 0;
+            
             $('#query').val(data.query);
                      
             show_histogram(data.stem_counts, filter_elements);
@@ -293,7 +321,8 @@ function filter_results(session_id, callback) {
             show_urls(data.url_counts);
             
             $('#tweet_count').html('Found '+data.tweets.length+' tweets');
-            show_tweets(data.tweets);           
+                      
+            show_tweets();           
                            
             if(callback) {
                 callback();
@@ -354,9 +383,10 @@ function show_history() {
     );
 }
 
-
+//
+// on load
+//
 $(function() {
-    
     $('#progress_modal').modal({
         keyboard: false,
         show: false
@@ -399,6 +429,7 @@ $(function() {
             }
         );
     });
+    
 });
 
 </script>

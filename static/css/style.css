@@ -4,9 +4,7 @@
 
 #query {width: 400px;}
 
-.filter-container {
-    padding: 0;
-}
+.filter-container {padding: 0;}
 
 .filter-list {margin: 0;padding: 0;min-height: 28px;}
 
@@ -25,43 +23,19 @@
 }
 
 .filter-list li .close {margin-left: 4px;}
-
 .filter-container a {padding-left: 6px;cursor: pointer;}
 
 #tweet_count {font-style: italic;font-size: 0.8em;text-align: right;}
+#username {font-weight: bold;font-size: 0.8em;text-align: right;}
 
-.breadcrumb > li + li:before {padding: 0 5px;color: #cccccc;content: "/\00a0";}
+.frame {border: 1px solid #aaa;border-radius: 4px;}
 
-.frame {
-    border: 1px solid #aaa;
-    border-radius: 4px;
-}
+.spaced {margin-bottom: 14px;}
 
-.padded {
-    padding-bottom: 14px;
-}
+#histogram {height: 400px;overflow: auto;padding: 4px;}
+#hashtags {height: 400px;overflow: auto;padding: 4px;}
 
-#histogram {
-    height: 400px;
-    overflow: auto;
-    padding: 4px;
-}
+#urls {height: 200px;overflow: auto;padding: 4px;}
 
-#hashtags {
-    height: 400px;
-    overflow: auto;
-    padding: 4px;
-}
-
-#urls {
-    height: 200px;
-    overflow: auto;
-    padding: 4px;
-}
-
-
-#tweets {
-    height: 614px;
-    overflow: auto;
-}
-
+#tweets {height: 614px;overflow: auto;}
+#tweets_loading {margin: 8px 0;text-align: center;}
