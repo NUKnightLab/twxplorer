@@ -2,6 +2,7 @@
 
 {% block extrahead %}
 <script type="application/javascript" src="http://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/Loader.js" charset="utf-8"></script>
 {% endblock %}
 
 {% block content %}
@@ -46,7 +47,7 @@
 <div class="row-fluid">   
     <div id='column1' class="span8"">
         <div class="row-fluid spaced">   
-            <div id='histogram' class="span7 frame">
+            <div id='terms' class="span7 frame">
             <!-- terms go here --> 
    
             </div>
@@ -66,32 +67,32 @@
 </div>
 
 <div id="progress_modal" class="modal fade">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-body">
-                <p><i class="icon-spinner icon-spin"></i> Searching twitter...</p>
-            </div>
-        </div>
+<div class="modal-dialog">
+<div class="modal-content">
+    <div class="modal-body">
+        <p><i class="icon-spinner icon-spin"></i> Searching twitter...</p>
     </div>
+</div>
+</div>
 </div>
 
 <div id="history_modal" class="modal fade">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title">Search History</h4>
-            </div>
-            <div class="modal-body">
-                <div class="accordion" id="history_accordion">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" id='history_delete' class="btn btn-default" onclick="delete_selected_history();">Delete Selected</button>
-                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-            </div>
+<div class="modal-dialog">
+<div class="modal-content">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title">Search History</h4>
+    </div>
+    <div class="modal-body">
+        <div class="accordion" id="history_accordion">
         </div>
     </div>
+    <div class="modal-footer">
+        <button type="button" id='history_delete' class="btn btn-default" onclick="delete_selected_history();">Delete Selected</button>
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+    </div>
+</div>
+</div>
 </div>
 
 
@@ -103,13 +104,9 @@
 
 var _session_id = '';
 var _stem_map = {};
-var _tweets = [];
+var _filter = '';       // current filter, comma-delimited string
 
-var _filter = '';       // current filter, for drill down
-
-var tweet_page_size = 10;
-var tweet_next_index = 0;
-
+var _TweetsLoader;
 
 function not_implemented() {
     alert('Not implemented yet!');
@@ -168,104 +165,70 @@ function remove_filter(stem) {
     set_filter(stems.join(','));
 }
 
-function set_breadcrumb() {          
-    if(_filter) {               
-        var s= '';
-        
+function show_filter() {          
+    var s = '';
+    
+    if(_filter) {
         stems = _filter.split(',');
         for(var i = 0; i < stems.length; i++) {
             s += '<li>'+get_term(stems[i])
                 + '<button class="close" onclick="remove_filter(\''+stems[i]+'\');">&times;</button>'
                 + '</li>';      
         }
-        
-        $('#filter_list').html(s).show();
-    } else {
-        $('#filter_list').html('').show();
-    }     
+    }    
+    $('#filter_list').html(s).show();
 }
 
-//
-// Show histogram, hiding any elements of _filter
-//
-/*
-       <div class='term'>
-            <span class="count">500</span>
-            <label>one</label>    
-            <div class="bar">&nbsp;</div>
-        </div>
-        <div>
-            <span class="count">500</span>
-            <label>two</label>    
-            <div class="bar" style="width: 50%;">&nbsp;</div>
-        </div>
-*/
-function show_histogram(stem_counts, filter_elements) {
-    $('#histogram').unbind('scroll.terms');
+function show_terms(stem_counts) {
+    $('#terms').unbind('scroll.terms');
     
-
     var s = '';
     var max_count = 0;
     
-    if(stem_counts.length) {
+    for(var i = 0; i < stem_counts.length; i++) {
+        stem = stem_counts[i][0];
+        count = stem_counts[i][1];
         
-        for(var i = 0; i < stem_counts.length; i++) {
-            stem = stem_counts[i][0];
-            count = stem_counts[i][1];
-            
-            if($.inArray(stem, filter_elements) < 0) {
-                max_count = max_count || count;
-                pct = (count * 100) / max_count;
-                
-                terms = [];
-                for(var j=0, m=_stem_map[stem]; j < m.length; j++) {
-                    terms.push(m[j][0]);
-                }
-                s += '<div class="term" onclick="add_filter(\''+stem+'\');">'
-                    + '<span class="count">'+count+'</span>'
-                    + '<div class="inner">'
-                    + '<label>'+terms.join(', ')+'</label>'
-                    + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
-                    + '</div>'
-                    + '</div>';
-    /*
-                s += '<p><a href="javascript:void(0);" onclick="add_filter(\''+stem+'\')">'
-                    + terms.join(', ')+'</a> ('+count+')</p>';
-    */
-            }
+        max_count = max_count || count;
+        pct = (count * 100) / max_count;
+        
+        terms = [];
+        for(var j=0, m=_stem_map[stem]; j < m.length; j++) {
+            terms.push(m[j][0]);
         }
+        s += '<div class="term" onclick="add_filter(\''+stem+'\');">'
+            + '<span class="count">'+count+'</span>'
+            + '<div class="inner">'
+            + '<label>'+terms.join(', ')+'</label>'
+            + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
+            + '</div>'
+            + '</div>';
     }
-    
-    $('#histogram').html(s);        
+
+    $('#terms').html(s);        
  }
 
 function on_scroll_terms(event) {
-    var offset = $('#terms_loading').offset().top - $('#histogram').offset().top;
-    var height = $('#histogram').innerHeight();
+    var offset = $('#terms_loading').offset().top - $('#terms').offset().top;
+    var height = $('#terms').innerHeight();
     
     if(offset < height) {
-        show_histogram();
+        show_terms();
     }
 }
 
-
-//
-// Show hashtags, hiding any elements of _filter
-//
-function show_hashtags(hashtag_counts, filter_elements) {
+function show_hashtags(hashtag_counts) {
     var s = '';
     
     for(var i = 0; i < hashtag_counts.length; i++) {
         hashtag = hashtag_counts[i][0];
         count = hashtag_counts[i][1];
 
-        if($.inArray(hashtag, filter_elements) < 0) {        
-            s += '<p><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
-                + hashtag+'</a> ('+count+')</p>';
-        }
+        s += '<p><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
+            + hashtag+'</a> ('+count+')</p>';
     }
 
-    $('#hashtags').html(s);     
+    $('#hashtags').html(s ? s : '<p class="msg">no hashtags found</p>');     
 }
 
 function show_urls(url_counts) {
@@ -276,65 +239,18 @@ function show_urls(url_counts) {
         count = url_counts[i][1];
         s += '<p><a href="'+url+'" target="_blank">'+ url+'</a> ('+count+')</p>';
     }
-    $('#urls').html(s);     
+    $('#urls').html(s ? s : '<p class="msg">no urls found</p>');     
 }
 
-
 //
-// Show tweets
-//
-function show_tweets() {
-    $('#tweets').unbind('scroll.tweets');
-
-    var s = '';
-    var max_index = Math.min(tweet_next_index+tweet_page_size, _tweets.length);
-    
-    for(var i = tweet_next_index; i < max_index; i++) {
-        var tweet = _tweets[i];
-        
-        s += '<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden">'
-            + '<p>'+tweet.text+'</p>&mdash; '+tweet.user_name + ' (@'+tweet.user_screen_name+')'
-            + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
-            + '</blockquote>';           
-    } 
-
-    $('#tweets_loading').remove();
-    $('#tweets').append(s);
-    
-    tweet_next_index = i;
-    
-    if(tweet_next_index < (_tweets.length - 1)) {
-        $('#tweets').append('<div id="tweets_loading"><i class="icon-spinner icon-spin"></i></div>');
-        $('#tweets').bind('scroll.tweets', on_scroll_tweets)
-    } 
-    
-    twttr.widgets.load();
-}
-
-function on_scroll_tweets(event) {
-    var offset = $('#tweets_loading').offset().top - $('#tweets').offset().top;
-    var height = $('#tweets').innerHeight();
-    
-    if(offset < height) {
-        show_tweets();
-    }
-}
-
-
-//
-// Get histogram and tweets for session_id using _filter
+// Get stats and tweets for session_id using _filter
 //
 function filter_results(session_id, callback) { 
     _session_id = session_id;
 
-    var filter_elements = []
-    if(_filter) { 
-        filter_elements = _filter.split(',');
-    }
-
-    set_breadcrumb(); 
+    show_filter(); 
     
-    $('#histogram, #hashtags, #urls, #tweets, #tweet_count').html('');
+    $('#terms, #hashtags, #urls, #tweets, #tweet_count').html('');
     $('#tweets').unbind('scroll.tweets')   
         
     do_ajax('/main/search/'+_session_id+'/', 
@@ -347,19 +263,18 @@ function filter_results(session_id, callback) {
         },
         function(data) {       
             _stem_map = data.stem_map;
-            _tweets = data.tweets;
-            tweet_next_index = 0;
             
             $('#query').val(data.query);
                      
-            show_histogram(data.stem_counts, filter_elements);
-            show_hashtags(data.hashtag_counts, filter_elements);
+            show_terms(data.stem_counts);
+            show_hashtags(data.hashtag_counts);
             show_urls(data.url_counts);
             
-            $('#tweet_count').html('Found '+data.tweets.length+' tweets');
-                      
-            show_tweets();           
-                           
+            $('#tweet_count').html(data.tweets.length+' tweets');
+                                    
+            _TweetsLoader.set_data(data.tweets);
+            _TweetsLoader.show_data();
+                         
             if(callback) {
                 callback();
             }
@@ -445,10 +360,9 @@ function show_history() {
             if(data.searches.length) {
                 $('#history_delete').show();
             } else {
-                s = '<p>No past searches found</p>'; 
                 $('#history_delete').hide();
             } 
-            $('#history_accordion').html(s);            
+            $('#history_accordion').html(s ? s : '<p>No past searches found</p>');            
             $('#history_modal').modal('show');
         }
     );
@@ -500,6 +414,21 @@ $(function() {
             }
         );
     });
+    
+    //
+    // Object to "lazy load" tweets
+    //
+    _TweetsLoader = new Loader($('#tweets'), 10, 
+        function(tweet) {
+            return '<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden">'
+                + '<p>'+tweet.text+'</p>&mdash; '+tweet.user_name + ' (@'+tweet.user_screen_name+')'
+                + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
+                + '</blockquote>';
+        },
+        function() {
+            twttr.widgets.load();
+        }
+    );
     
 });
 

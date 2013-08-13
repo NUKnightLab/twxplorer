@@ -5,6 +5,7 @@ from flask import Flask, request, session, redirect, url_for, render_template
 import sys
 import os
 import importlib
+from functools import wraps
 from collections import defaultdict, Counter
 import json
 import re
@@ -38,12 +39,32 @@ app.config.from_envvar('FLASK_CONFIG_MODULE')
 settings = sys.modules[settings_module]
 
 
+def is_logged_in():
+    """
+    Is the user logged in or not?
+    """
+    oauth = get_oauth()
+    return oauth.request_token != None and oauth.access_token != None
+
+
+def login_required(f):
+    """
+    Decorator for login required
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_logged_in():
+            return redirect(url_for('index'))
+            #return redirect(url_for('index', next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @app.context_processor
 def inject_static_url():
     """
-    Inject the variables 'static_url' and STATIC_URL into the templates to
-    avoid hard-coded paths to static files. Grab it from the environment 
-    variable STATIC_URL, or use the default.
+    Inject the variables 'static_url' and STATIC_URL into the templates.  
+    Grab it from the environment variable STATIC_URL, or use the default.
 
     Note:  The template variable will always have a trailing slash.
     """
@@ -105,14 +126,6 @@ def get_oauth():
             if username:
                 session['username'] = username.lower()
     return oauth
-
-
-def is_logged_in():
-    """
-    Is the user logged in or not?
-    """
-    oauth = get_oauth()
-    return oauth.request_token != None and oauth.access_token != None
     
     
 @app.route("/auth/", methods=['GET', 'POST'])
@@ -155,41 +168,40 @@ def logout():
 
          
 #
-# Routes
+# Main views
 #
 
 @app.route("/", methods=['GET', 'POST'])
 def index(name=''):
-    """Main page"""    
-    error = ''    
-    
+    """
+    Main page
+    """    
     try:
         if is_logged_in():
             return redirect(url_for('main'))
             
         return render_template('index.html')
     except Exception, e:
-        error = str(e)
         traceback.print_exc()
-        return render_template('index.html', error=error)
+        return render_template('index.html', error=str(e))
         
 
 @app.route("/main/", methods=['GET', 'POST'])
+@login_required
 def main():
-    """Main page for logged in user"""
-    if not is_logged_in():
-        return redirect(url_for('index'))
-
+    """
+    Main page for logged in user
+    """
     return render_template('main.html')
    
 @app.route("/main/search/", methods=['GET', 'POST'])
+@login_required
 def search():
-    """Search twitter"""
-    error = ''
-
-    if not is_logged_in():
-        return redirect(url_for('index'))
+    """
+    Search twitter
     
+    @query = query string
+    """
     try:
         query = request.args.get('query')
         if not query:
@@ -221,6 +233,8 @@ def search():
         # Process tweets
         stem_map = defaultdict(Counter)
         stem_counter = Counter()
+        hashtag_counter = Counter()
+        url_counter = Counter()
 
         stopwords = extract._stopwords.copy()
         stopwords.update([x.lower() for x in query_lower.split()])
@@ -229,7 +243,8 @@ def search():
         n = 0
         for tweet in tweepy.Cursor(api.search, q=query, count=100, \
             result_type='recent', include_entities=True) \
-            .items(limit=settings.TWITTER_SEARCH_LIMIT):            
+            .items(limit=settings.TWITTER_SEARCH_LIMIT):  
+                      
             tweet_dict = twutil.status_to_dict(tweet)
                        
             grams = extract.grams_from_string(tweet_dict['text'], stopwords)
@@ -245,33 +260,39 @@ def search():
             stem_counter.update(stem_set)
 
             hashtag_set = set(['#'+x['text'].lower() \
-                for x in tweet_dict['entities']['hashtags']])
-                        
+                for x in tweet_dict['entities']['hashtags']]) 
+            hashtag_counter.update(hashtag_set)
+            
+            url_set = set([x['expanded_url'].lower() \
+                for x in tweet_dict['entities']['urls']])                
+            url_counter.update(url_set)            
+                     
             tweet_dict['session_id'] = session_id
             tweet_dict['stems'] = list(stem_set)    
             tweet_dict['hashtags'] = list(hashtag_set)
+            tweet_dict['urls'] = list(url_set)
             tweet_dict['embed'] = twutil.format_text(tweet_dict)       
             tweets.append(tweet_dict)
             n += 1
             
         # Update session
-        session_r['stem_counts'] = stem_counter.most_common()
         for stem, c in stem_map.iteritems():
-            session_r['stem_map'][stem] = c.most_common()
+            session_r['stem_map'][stem] = c.most_common()            
+        session_r['stem_counts'] = stem_counter.most_common()
+        session_r['hashtag_counts'] = hashtag_counter.most_common()
+        session_r['url_counts'] = url_counter.most_common()
         _session.save(session_r)
         
         # Save tweets
         _tweets.insert(tweets)   
         
-        return _jsonify(error=error, session=session_r)
+        return _jsonify(session=session_r)
     except tweepy.TweepError, e:
-        error = e.message[0]['message']
         traceback.print_exc()
-        return _jsonify(error=error)        
+        return _jsonify(error=e.message[0]['message'])        
     except Exception, e:
-        error = str(e)
         traceback.print_exc()
-        return _jsonify(error=error)
+        return _jsonify(error=str(e))
 
         
 """@app.route("/main/test/<tweet_id>/", methods=['GET', 'POST'])
@@ -285,26 +306,23 @@ def test(tweet_id):
     
                     
 @app.route("/main/search/<session_id>/", methods=['GET', 'POST'])
+@login_required
 def results(session_id):
     """
     Get histogram and tweets
+    
     @filter: comma-delimited list of elements to filter by
         if element starts with '#', then it is a hashtag
         else, it is a stem
     """
-    error = ''
-
-    if not is_logged_in():
-        return redirect(url_for('index'))
-    
     try:
-        # Find session
-        session_r = _session.find_one({'_id': bson.ObjectId(session_id)})
+        session_r = _session.find_one(
+            {'_id': bson.ObjectId(session_id)})
         if not session_r:
             raise Exception('Session not found')
             
-        # Find search
-        search_r = _search.find_one({'_id': bson.ObjectId(session_r['search_id'])})
+        search_r = _search.find_one(
+            {'_id': bson.ObjectId(session_r['search_id'])})
         if not search_r:
             raise Exception('Search not found')
             
@@ -312,17 +330,31 @@ def results(session_id):
         params = {'session_id': session_id}
         
         filter = request.args.get('filter')
+        filter_stems = []
+        filter_hashtags = []       
+        filter_urls = []
+        
         if filter:
             elements = filter.split(',')
-            stems = [x for x in elements if not x.startswith('#')]            
-            if stems:
-                params['stems'] = {'$all': stems}
+            filter_stems = [x for x in elements if not x.startswith('#')]            
+            if filter_stems:
+                params['stems'] = {'$all': filter_stems}
                 
-            hashtags = [x for x in elements if x.startswith('#')]
-            if hashtags:
-                params['hashtags'] = {'$all': hashtags}
+            filter_hashtags = [x for x in elements if x.startswith('#')]
+            if filter_hashtags:
+                params['hashtags'] = {'$all': filter_hashtags}
         
-        cursor = _tweets.find(params, sort=[('dt', pymongo.DESCENDING)])
+        cursor = _tweets.find(params, {
+                'embed': 1,
+                'id_str': 1,
+                'created_at': 1,
+                'user.name': 1,
+                'user.screen_name': 1,
+                'retweeted_status.id_str': 1,
+                'stems': 1,
+                'hashtags': 1,
+                'urls': 1
+            }, sort=[('dt', pymongo.DESCENDING)])
         
         # Process tweets
         stem_counter = Counter()
@@ -333,21 +365,23 @@ def results(session_id):
         id_set = set()
         
         for tweet in cursor:  
-            stem_counter.update(tweet['stems'])
-            hashtag_counter.update(tweet['hashtags'])
-            url_counter.update([entity['expanded_url'].lower() \
-                for entity in tweet['entities']['urls']])
-           
+            stem_counter.update(
+                [x for x in tweet['stems'] if not x in filter_stems])
+            hashtag_counter.update(
+                [x for x in tweet['hashtags'] if not x in filter_hashtags])
+            url_counter.update(
+                [x for x in tweet['urls'] if not x in filter_urls])
+       
             if tweet['id_str'] in id_set:
                 continue
             id_set.add(tweet['id_str'])
-              
+          
             if 'retweeted_status' in tweet:
                 retweeted_id = tweet['retweeted_status']['id_str']
                 if retweeted_id in id_set:
                     continue              
                 id_set.add(retweeted_id)
-            
+                    
             tweets.append({
                 'text': tweet['embed'],
                 'user_name': tweet['user']['name'],
@@ -355,22 +389,33 @@ def results(session_id):
                 'id_str': tweet['id_str'],
                 'created_at': tweet['created_at']           
             })
+                
+        stem_counts = stem_counter.most_common()
+        hashtag_counts = hashtag_counter.most_common()    
+        url_counts = url_counter.most_common()
                            
         return _jsonify(
             query=search_r['query'],
             stem_map=session_r['stem_map'],
-            stem_counts=stem_counter.most_common(), 
-            hashtag_counts=hashtag_counter.most_common(),
-            url_counts=url_counter.most_common(),
+            stem_counts=stem_counts, 
+            hashtag_counts=hashtag_counts,
+            url_counts=url_counts,
             tweets=tweets
         )
     except Exception, e:
-        error = str(e)
         traceback.print_exc()
-        return _jsonify(error=error)
+        return _jsonify(error=str(e))
+
 
 @app.route("/main/history/delete/", methods=['GET', 'POST'])
+@login_required
 def history_delete():
+    """
+    Delete searches/sessions/tweets
+    
+    @searches = list of search ids
+    @sessions = list of session ids
+    """
     try:
         search_ids = request.args.getlist('searches[]')        
         session_ids = set(request.args.getlist('sessions[]'))
@@ -388,21 +433,16 @@ def history_delete():
          
         return _jsonify(deleted=session_ids)
     except Exception, e:
-        error = str(e)
         traceback.print_exc()
-        return _jsonify(error=error)
+        return _jsonify(error=str(e))
     
 
 @app.route("/main/history/", methods=['GET', 'POST'])
+@login_required
 def history():
     """
     Get search history, grouped by search -> session
     """
-    error = ''
-    
-    if not is_logged_in():
-        return redirect(url_for('index'))
-
     try:
         searches = []
         
@@ -431,9 +471,8 @@ def history():
                         
         return _jsonify(searches=searches)
     except Exception, e:
-        error = str(e)
         traceback.print_exc()
-        return _jsonify(error=error)
+        return _jsonify(error=str(e))
 
       
 if __name__ == "__main__":

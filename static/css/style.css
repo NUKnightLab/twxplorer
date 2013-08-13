@@ -1,11 +1,15 @@
 /* CSS STYLES */
 
 .center {text-align: center;}
+.frame {border: 1px solid #aaa;border-radius: 4px;}
+.spaced {margin-bottom: 14px;}
+.loading {margin: 8px 0;text-align: center;}
+.msg {color: #666;margin: 8px 0;text-align: center;}
+
 
 #query {width: 400px;}
 
 .filter-container {padding: 0;}
-
 .filter-list {margin: 0;padding: 0;min-height: 28px;}
 
 .filter-list li {
@@ -18,43 +22,28 @@
     border-radius: 4px;
     background-color: #efefef;
     color: #333;
-    cursor: default;
     font-size: .9em;
 }
 
 .filter-list li .close {margin-left: 4px;}
 .filter-container a {padding-left: 6px;cursor: pointer;}
 
-#tweet_count {font-style: italic;font-size: 0.8em;text-align: right;}
 #username {font-weight: bold;font-size: 0.8em;text-align: right;}
 
-.frame {border: 1px solid #aaa;border-radius: 4px;}
+#tweet_count {font-style: italic;font-size: 0.8em;text-align: right;}
 
-.spaced {margin-bottom: 14px;}
-
-#histogram {height: 400px;overflow: auto;padding: 4px;}
-
-#histogram .term {
-    width: 100%;    
-    margin: 0 0 0.75em 0; 
-    padding: 0;
-    cursor: pointer;
-}
-
-#histogram .inner {margin: 0 40px 0 0;}
-
-#histogram label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
-
-#histogram .bar {background: #e35a25;height: 0.5em;}
-
-#histogram .count {font-size: 0.9em;float: right;font-size: 0.9em;}
+#terms {height: 400px;overflow: auto;padding: 4px;}
+#terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer;}
+#terms .inner {margin: 0 40px 0 0;}
+#terms label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
+#terms .bar {background: #e35a25;height: 0.5em;}
+#terms .count {font-size: 0.9em;float: right;font-size: 0.9em;}
 
 #hashtags {font-size: 0.9em;height: 400px;overflow: auto;padding: 4px;}
 
 #urls {font-size: 0.9em;height: 200px;overflow: auto;padding: 4px;}
 
 #tweets {height: 614px;overflow: auto;}
-#tweets_loading {margin: 8px 0;text-align: center;}
 
 #history_accordion .accordion-heading input[type=checkbox] {float: right;margin: 10px 15px 10px 10px;}
 #history_accordion .accordion-inner input[type=checkbox] {float: right;margin: 6px 0 10px 10px;}
