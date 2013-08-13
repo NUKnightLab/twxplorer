@@ -194,7 +194,7 @@ def main():
     """
     return render_template('main.html')
    
-@app.route("/main/search/", methods=['GET', 'POST'])
+@app.route("/search/", methods=['GET', 'POST'])
 @login_required
 def search():
     """
@@ -294,20 +294,10 @@ def search():
         traceback.print_exc()
         return _jsonify(error=str(e))
 
-        
-"""@app.route("/main/test/<tweet_id>/", methods=['GET', 'POST'])
-def test(tweet_id):
-    r = _tweets.find_one({'id_str': tweet_id})
-    print 'text = ', r['text']
-    grams = extract.grams_from_string(r['text'], [])
-    stems = extract.stems_from_grams(grams)
- 
-    return _jsonify(text=r['text'])"""
-    
                     
-@app.route("/main/search/<session_id>/", methods=['GET', 'POST'])
+@app.route("/search/<session_id>/", methods=['GET', 'POST'])
 @login_required
-def results(session_id):
+def search_results(session_id):
     """
     Get histogram and tweets
     
@@ -407,37 +397,9 @@ def results(session_id):
         return _jsonify(error=str(e))
 
 
-@app.route("/main/history/delete/", methods=['GET', 'POST'])
-@login_required
-def history_delete():
-    """
-    Delete searches/sessions/tweets
-    
-    @searches = list of search ids
-    @sessions = list of session ids
-    """
-    try:
-        search_ids = request.args.getlist('searches[]')        
-        session_ids = set(request.args.getlist('sessions[]'))
-        
-        cursor = _session.find({'search_id': {'$in': search_ids}}, {'_id': 1})
-        session_ids.update([str(r['_id']) for r in cursor])
-        session_ids = list(session_ids)
-                  
-        _tweets.remove(
-            {'session_id': {'$in': session_ids}})
-        _session.remove(
-            {'_id': {'$in': [bson.ObjectId(x) for x in session_ids]}})
-        _search.remove(
-            {'_id': {'$in': [bson.ObjectId(x) for x in search_ids]}})
-         
-        return _jsonify(deleted=session_ids)
-    except Exception, e:
-        traceback.print_exc()
-        return _jsonify(error=str(e))
     
 
-@app.route("/main/history/", methods=['GET', 'POST'])
+@app.route("/history/", methods=['GET', 'POST'])
 @login_required
 def history():
     """
@@ -470,6 +432,36 @@ def history():
             searches.append(search_r)
                         
         return _jsonify(searches=searches)
+    except Exception, e:
+        traceback.print_exc()
+        return _jsonify(error=str(e))
+
+
+@app.route("/history/delete/", methods=['GET', 'POST'])
+@login_required
+def history_delete():
+    """
+    Delete searches/sessions/tweets
+    
+    @searches = list of search ids
+    @sessions = list of session ids
+    """
+    try:
+        search_ids = request.args.getlist('searches[]')        
+        session_ids = set(request.args.getlist('sessions[]'))
+        
+        cursor = _session.find({'search_id': {'$in': search_ids}}, {'_id': 1})
+        session_ids.update([str(r['_id']) for r in cursor])
+        session_ids = list(session_ids)
+                  
+        _tweets.remove(
+            {'session_id': {'$in': session_ids}})
+        _session.remove(
+            {'_id': {'$in': [bson.ObjectId(x) for x in session_ids]}})
+        _search.remove(
+            {'_id': {'$in': [bson.ObjectId(x) for x in search_ids]}})
+         
+        return _jsonify(deleted=session_ids)
     except Exception, e:
         traceback.print_exc()
         return _jsonify(error=str(e))

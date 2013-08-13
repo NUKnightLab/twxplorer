@@ -106,7 +106,9 @@ var _session_id = '';
 var _stem_map = {};
 var _filter = '';       // current filter, comma-delimited string
 
+var _TermsLoader;
 var _TweetsLoader;
+
 
 function not_implemented() {
     alert('Not implemented yet!');
@@ -139,11 +141,11 @@ function do_ajax(url, data, on_error, on_success) {
     });
 }
 
-function get_term(s) {
+function get_term(s, sep) {
     if(s[0] == '#') {
         return s;
     }       
-    return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(',');
+    return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(sep || ',');
 }
 
 function set_filter(filter) {
@@ -177,44 +179,6 @@ function show_filter() {
         }
     }    
     $('#filter_list').html(s).show();
-}
-
-function show_terms(stem_counts) {
-    $('#terms').unbind('scroll.terms');
-    
-    var s = '';
-    var max_count = 0;
-    
-    for(var i = 0; i < stem_counts.length; i++) {
-        stem = stem_counts[i][0];
-        count = stem_counts[i][1];
-        
-        max_count = max_count || count;
-        pct = (count * 100) / max_count;
-        
-        terms = [];
-        for(var j=0, m=_stem_map[stem]; j < m.length; j++) {
-            terms.push(m[j][0]);
-        }
-        s += '<div class="term" onclick="add_filter(\''+stem+'\');">'
-            + '<span class="count">'+count+'</span>'
-            + '<div class="inner">'
-            + '<label>'+terms.join(', ')+'</label>'
-            + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
-            + '</div>'
-            + '</div>';
-    }
-
-    $('#terms').html(s);        
- }
-
-function on_scroll_terms(event) {
-    var offset = $('#terms_loading').offset().top - $('#terms').offset().top;
-    var height = $('#terms').innerHeight();
-    
-    if(offset < height) {
-        show_terms();
-    }
 }
 
 function show_hashtags(hashtag_counts) {
@@ -251,9 +215,8 @@ function filter_results(session_id, callback) {
     show_filter(); 
     
     $('#terms, #hashtags, #urls, #tweets, #tweet_count').html('');
-    $('#tweets').unbind('scroll.tweets')   
         
-    do_ajax('/main/search/'+_session_id+'/', 
+    do_ajax('/search/'+_session_id+'/', 
         {filter: _filter},
         function(err) {
             show_error('Error filtering results ('+err+')');
@@ -265,16 +228,14 @@ function filter_results(session_id, callback) {
             _stem_map = data.stem_map;
             
             $('#query').val(data.query);
+            $('#tweet_count').html(data.tweets.length+' tweets');
                      
-            show_terms(data.stem_counts);
+            _TermsLoader.set_data(data.stem_counts).load_more();
+            _TweetsLoader.set_data(data.tweets).load_more();
+           
             show_hashtags(data.hashtag_counts);
             show_urls(data.url_counts);
-            
-            $('#tweet_count').html(data.tweets.length+' tweets');
-                                    
-            _TweetsLoader.set_data(data.tweets);
-            _TweetsLoader.show_data();
-                         
+                                                                        
             if(callback) {
                 callback();
             }
@@ -323,7 +284,7 @@ function delete_selected_history() {
 }
 
 function show_history() {
-    do_ajax('/main/history/', 
+    do_ajax("{{ url_for('history') }}", 
         {},
         function(err) {
             show_error('Error getting search history ('+err+')');
@@ -391,7 +352,6 @@ $(function() {
         })
         .focus();
 
-    // New search
     $('#search').click(function(event) {
         var query = $('#query').val().trim();
         if(!query) {
@@ -401,7 +361,7 @@ $(function() {
     
         $('#progress_modal').modal('show');
     
-        do_ajax('/main/search/', 
+        do_ajax("{{ url_for('search') }}", 
             {query: query},
             function(error) {
                 show_error(error);
@@ -416,11 +376,29 @@ $(function() {
     });
     
     //
-    // Object to "lazy load" tweets
+    // "lazy load" objects
     //
+    _TermsLoader = new Loader($('#terms'), 10,
+        function(stem_count) {            
+            var stem = stem_count[0];
+            var count = stem_count[1];
+            var pct = (count * 100)/_TermsLoader.data[0][1];
+            
+            return ''
+            + '<div class="term" onclick="add_filter(\''+stem+'\');">'
+            + '<span class="count">'+count+'</span>'
+            + '<div class="inner">'
+            + '<label>'+get_term(stem, ', ')+'</label>'
+            + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
+            + '</div>'
+            + '</div>';            
+        }
+    );
+    
     _TweetsLoader = new Loader($('#tweets'), 10, 
         function(tweet) {
-            return '<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden">'
+            return ''
+                + '<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden">'
                 + '<p>'+tweet.text+'</p>&mdash; '+tweet.user_name + ' (@'+tweet.user_screen_name+')'
                 + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
                 + '</blockquote>';

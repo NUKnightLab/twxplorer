@@ -16,9 +16,11 @@ function Loader(target, page_size, format_callback, post_show_callback) {
     this.set_data = function(data) {
         this.data = data;    
         this.next_index = 0;
+        
+        return _self;
     }
     
-    this.show_data = function() {
+    this.load_more = function() {
         target.unbind('scroll.loader');
 
         var s = '';
@@ -40,12 +42,14 @@ function Loader(target, page_size, format_callback, post_show_callback) {
         if(post_show_callback) {
             post_show_callback();
         }
+        
+        return _self;
     }
     
     this.on_scroll = function(event) {
         var offset = target.find('.loading').offset().top - target.offset().top;
         if(offset < target.innerHeight()) {
-            _self.show_data();
+            _self.load_more();
         }    
     }
 }
