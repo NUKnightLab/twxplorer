@@ -42,6 +42,9 @@
 #hashtags {font-size: 0.9em;height: 400px;overflow: auto;padding: 4px;}
 
 #urls {font-size: 0.9em;height: 200px;overflow: auto;padding: 4px;}
+#urls a.external-link {margin-left: 10px;}
+#urls .count{float: right;width: 40px;margin-left: 10px;text-align: right;}
+
 
 #tweets {height: 614px;overflow: auto;}
 

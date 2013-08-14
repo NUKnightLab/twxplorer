@@ -297,8 +297,6 @@ def search():
         traceback.print_exc()
         return _jsonify(error=str(e))
 
-        
-    
                     
 @app.route("/search/<session_id>/", methods=['GET', 'POST'])
 @login_required
@@ -330,15 +328,21 @@ def search_results(session_id):
         filter_urls = []
         
         if filter:
-            elements = filter.split(',')
-            filter_stems = [x for x in elements if not x.startswith('#')]            
+            for element in filter.split(','):
+                if element.startswith('#'):
+                    filter_hashtags.append(element)
+                elif element.startswith('http'):
+                    filter_urls.append(element)
+                else:
+                    filter_stems.append(element)
+                    
+            if filter_urls:
+                params['urls'] = {'$all': filter_urls}
             if filter_stems:
                 params['stems'] = {'$all': filter_stems}
-                
-            filter_hashtags = [x for x in elements if x.startswith('#')]
             if filter_hashtags:
                 params['hashtags'] = {'$all': filter_hashtags}
-        
+                  
         cursor = _tweets.find(params, {
                 'embed': 1,
                 'id_str': 1,
@@ -360,13 +364,10 @@ def search_results(session_id):
         id_set = set()
         
         for tweet in cursor:  
-            stem_counter.update(
-                [x for x in tweet['stems'] if not x in filter_stems])
-            hashtag_counter.update(
-                [x for x in tweet['hashtags'] if not x in filter_hashtags])
-            url_counter.update(
-                [x for x in tweet['urls'] if not x in filter_urls])
-        
+            stem_counter.update(tweet['stems'])
+            hashtag_counter.update(tweet['hashtags'])
+            url_counter.update(tweet['urls'])
+            
             if tweet['id_str'] in id_set:
                 continue
             id_set.add(tweet['id_str'])
@@ -385,9 +386,12 @@ def search_results(session_id):
                 'created_at': tweet['created_at']           
             })
                 
-        stem_counts = stem_counter.most_common()
-        hashtag_counts = hashtag_counter.most_common()    
-        url_counts = url_counter.most_common()
+        stem_counts = [x for x in stem_counter.most_common() \
+            if x[0] not in filter_stems]
+        hashtag_counts = [x for x in hashtag_counter.most_common() \
+            if x[0] not in filter_hashtags]
+        url_counts = [x for x in url_counter.most_common() \
+            if x[0] not in filter_urls]
                            
         return _jsonify(
             query=search_r['query'],
@@ -400,8 +404,6 @@ def search_results(session_id):
     except Exception, e:
         traceback.print_exc()
         return _jsonify(error=str(e))
-
-
     
 
 @app.route("/history/", methods=['GET', 'POST'])

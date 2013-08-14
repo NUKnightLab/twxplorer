@@ -45,7 +45,7 @@
 </div>
 
 <div class="row-fluid">   
-    <div id='column1' class="span8"">
+    <div id='column1' class="span8">
         <div class="row-fluid spaced">   
             <div id='terms' class="span7 frame">
             <!-- terms go here --> 
@@ -57,7 +57,6 @@
         </div>
         <div class="row-fluid">
             <div id="urls" class="span12 frame">
-            <!-- urls go here -->     
             </div>
         </div>
     </div>    
@@ -145,8 +144,12 @@ function do_ajax(url, data, on_error, on_success) {
 function get_term(s, sep) {
     if(s[0] == '#') {
         return s;
-    }       
-    return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(sep || ',');
+    }   
+    if(s in _stem_map) {    
+        return $.map(_stem_map[s], function(elem, i) { 
+            return elem[0]; }).join(sep || ',');
+    }
+    return s;
 }
 
 function set_filter(filter) {
@@ -168,7 +171,7 @@ function remove_filter(stem) {
     set_filter(stems.join(','));
 }
 
-function show_filter() {          
+function show_filter() {   
     var s = '';
     
     if(_filter) {
@@ -366,39 +369,52 @@ $(function() {
     });
     
     //
-    // "lazy load" objects
+    // Loaders
     //
     _TermsLoader = new Loader($('#terms'), 10,
-        function(stem_count) {            
-            var stem = stem_count[0];
-            var count = stem_count[1];
-            var pct = (count * 100)/_TermsLoader.data[0][1];
+        function(stem_counts, callback) {   
+            var html = '';
+            var max_count =  _TermsLoader.data[0][1];
             
-            return ''
-            + '<div class="term" onclick="add_filter(\''+stem+'\');">'
-            + '<span class="count">'+count+'</span>'
-            + '<div class="inner">'
-            + '<label>'+get_term(stem, ', ')+'</label>'
-            + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
-            + '</div>'
-            + '</div>';            
+            for(var i = 0; i < stem_counts.length; i++) {                   
+                var stem = stem_counts[i][0];
+                var count = stem_counts[i][1];
+                var pct = (count * 100)/max_count;
+            
+                html += ''
+                    + '<div class="term" onclick="add_filter(\''+stem+'\');">'
+                    + '<span class="count">'+count+'</span>'
+                    + '<div class="inner">'
+                    + '<label>'+get_term(stem, ', ')+'</label>'
+                    + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
+                    + '</div>'
+                    + '</div>';     
+            }            
+            callback(html);       
         }
     );
     
     _TweetsLoader = new Loader($('#tweets'), 10, 
-        function(tweet) {
-            return ''
-                + '<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden">'
-                + '<p>'+tweet.text+'</p>&mdash; '+tweet.user_name + ' (@'+tweet.user_screen_name+')'
-                + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
-                + '</blockquote>';
+        function(tweets, callback) {
+            var html = '';
+
+            for(var i = 0; i < tweets.length; i++) {      
+                var tweet = tweets[i];
+                             
+                html += ''
+                    + '<blockquote class="twitter-tweet" data-conversation="none" data-cards="hidden">'
+                    + '<p>'+tweet.text+'</p>&mdash; '+tweet.user_name + ' (@'+tweet.user_screen_name+')'
+                    + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
+                    + '</blockquote>';
+            }
+            callback(html);
         },
         function() {
             twttr.widgets.load();
         }
     );
     
-    _UrlsLoader = new AjaxLoader($('#urls'), 6,
+    _UrlsLoader = new Loader($('#urls'), 6,
         function(url_counts, callback) {   
             var urls = $.map(url_counts, function(elem, i) { return elem[0]; });
             
@@ -414,9 +430,14 @@ $(function() {
                     
                         for(var i = 0; i < data.info.length; i++) {
                             var info = data.info[i];
-                            html += '<p><a href="'+info.url+'" target="_blank">'
-                                + (info.title || info.url) 
-                                +'</a> ('+url_counts[i][1]+')</p>';
+                            
+                            html += ''
+                                + '<p>'
+                                + '<span class="count">('+url_counts[i][1]+')</span>'
+                                + '<a href="javascript:void(0);" onclick="add_filter(\''+info.url+'\');">'+ (info.title || info.url) +'</a>'
+                                + '<a class="external-link" href="'+info.url+'" target="_blank" title="open url in new window">'
+                                + '<i class="icon-external-link"></i></a>'
+                                + '</p>';
                         }
                     
                         callback(html);
@@ -424,8 +445,7 @@ $(function() {
                 );
             } else {
                 callback('<p class="msg">no urls found</p>');
-            }         
-          
+            }                   
         }
     );
     
