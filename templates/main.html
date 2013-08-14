@@ -400,27 +400,32 @@ $(function() {
     
     _UrlsLoader = new AjaxLoader($('#urls'), 6,
         function(url_counts, callback) {   
-            var urls = $.map(url_counts, function(elem, i) { return elem[0]; });           
-          
-            do_ajax("{{ url_for('urls') }}", 
-                {urls: urls},
-                function(error) {
-                    show_error(error);
-                    callback('');
-                },
-                function(data) {   
-                    var html = '';
+            var urls = $.map(url_counts, function(elem, i) { return elem[0]; });
+            
+            if(urls.length) {                  
+                do_ajax("{{ url_for('urls') }}", 
+                    {urls: urls},
+                    function(error) {
+                        show_error(error);
+                        callback('');
+                    },
+                    function(data) {   
+                        var html = '';
                     
-                    for(var i = 0; i < data.info.length; i++) {
-                        var info = data.info[i];
-                        html += '<p><a href="'+info.url+'" target="_blank">'
-                            + (info.title || info.url) 
-                            +'</a> ('+url_counts[i][1]+')</p>';
+                        for(var i = 0; i < data.info.length; i++) {
+                            var info = data.info[i];
+                            html += '<p><a href="'+info.url+'" target="_blank">'
+                                + (info.title || info.url) 
+                                +'</a> ('+url_counts[i][1]+')</p>';
+                        }
+                    
+                        callback(html);
                     }
-                    
-                    callback(html);
-                }
-            );
+                );
+            } else {
+                callback('<p class="msg">no urls found</p>');
+            }         
+          
         }
     );
     

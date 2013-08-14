@@ -45,7 +45,7 @@ Loader.prototype.on_scroll = function(event) {
     } 
 };
 
-Loader.prototype.load_more = function() {
+Loader.prototype.load_more = function() {    
     this.target.unbind('scroll.loader');
 
     var html = '';
