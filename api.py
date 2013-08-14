@@ -14,6 +14,8 @@ import datetime
 import bson
 import tweepy
 import pymongo
+import urllib2
+import lxml.html
 
 
 # Import settings module
@@ -29,14 +31,15 @@ except ImportError, e:
     raise ImportError("Could not import settings module '%s': %s" % (settings_module, e))
 
 
-from twxplorer.connection import _search, _session, _tweets
+from twxplorer.connection import _search, _session, _tweets, _url
 from twxplorer import extract, twutil
-
 
 app = Flask(__name__)
 app.config.from_envvar('FLASK_CONFIG_MODULE')
 
 settings = sys.modules[settings_module]
+
+html_parser = lxml.html.HTMLParser(encoding='utf-8')
 
 
 def is_logged_in():
@@ -170,7 +173,7 @@ def logout():
 #
 # Main views
 #
-
+    
 @app.route("/", methods=['GET', 'POST'])
 def index(name=''):
     """
@@ -262,8 +265,8 @@ def search():
             hashtag_set = set(['#'+x['text'].lower() \
                 for x in tweet_dict['entities']['hashtags']]) 
             hashtag_counter.update(hashtag_set)
-            
-            url_set = set([x['expanded_url'].lower() \
+                            
+            url_set = set([x['expanded_url'] \
                 for x in tweet_dict['entities']['urls']])                
             url_counter.update(url_set)            
                      
@@ -294,6 +297,8 @@ def search():
         traceback.print_exc()
         return _jsonify(error=str(e))
 
+        
+    
                     
 @app.route("/search/<session_id>/", methods=['GET', 'POST'])
 @login_required
@@ -361,7 +366,7 @@ def search_results(session_id):
                 [x for x in tweet['hashtags'] if not x in filter_hashtags])
             url_counter.update(
                 [x for x in tweet['urls'] if not x in filter_urls])
-       
+        
             if tweet['id_str'] in id_set:
                 continue
             id_set.add(tweet['id_str'])
@@ -462,6 +467,42 @@ def history_delete():
             {'_id': {'$in': [bson.ObjectId(x) for x in search_ids]}})
          
         return _jsonify(deleted=session_ids)
+    except Exception, e:
+        traceback.print_exc()
+        return _jsonify(error=str(e))
+
+
+@app.route("/urls/", methods=['GET', 'POST'])
+@login_required
+def urls():
+    """
+    Get extended info for urls
+    
+    @urls = list of urls
+    """
+    try:        
+        urls = request.args.getlist('urls[]')
+        if not urls:
+            raise Exception('No urls found')
+
+        info = []
+        for url in urls:
+            r = _url.find_one({'url': url})
+            if not r:
+                r = {'url': url, 'title': ''}
+                try:
+                    resp = urllib2.urlopen(url)
+                    element = lxml.html.parse(resp, html_parser)
+                    if element:
+                        r['title'] = element.find(".//title").text.strip()                    
+                except Exception, e:
+                    pass
+                
+                r['_id'] = _url.insert(r, manipulate=True)   
+                
+            info.append(r)
+                
+        return _jsonify(info=info)                     
     except Exception, e:
         traceback.print_exc()
         return _jsonify(error=str(e))

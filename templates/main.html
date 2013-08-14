@@ -108,6 +108,7 @@ var _filter = '';       // current filter, comma-delimited string
 
 var _TermsLoader;
 var _TweetsLoader;
+var _UrlsLoader;
 
 
 function not_implemented() {
@@ -195,17 +196,6 @@ function show_hashtags(hashtag_counts) {
     $('#hashtags').html(s ? s : '<p class="msg">no hashtags found</p>');     
 }
 
-function show_urls(url_counts) {
-    var s = '';
-    
-    for(var i = 0; i < url_counts.length; i++) {
-        url = url_counts[i][0];
-        count = url_counts[i][1];
-        s += '<p><a href="'+url+'" target="_blank">'+ url+'</a> ('+count+')</p>';
-    }
-    $('#urls').html(s ? s : '<p class="msg">no urls found</p>');     
-}
-
 //
 // Get stats and tweets for session_id using _filter
 //
@@ -234,7 +224,8 @@ function filter_results(session_id, callback) {
             _TweetsLoader.set_data(data.tweets).load_more();
            
             show_hashtags(data.hashtag_counts);
-            show_urls(data.url_counts);
+            
+            _UrlsLoader.set_data(data.url_counts).load_more();
                                                                         
             if(callback) {
                 callback();
@@ -255,11 +246,11 @@ function load_session(session_id, callback) {
 
 function delete_selected_history() {
     if(confirm("Delete selected search sessions?")) {
-        $('#history_modal').modal('hide');
-        
         var searches = [];
         var sessions = [];
-
+        
+        $('#history_modal').modal('hide');
+    
         $('#history_accordion input.search:checked').each(function() {
             searches.push($(this).val());
         });
@@ -274,7 +265,6 @@ function delete_selected_history() {
                 show_error('Error deleting searches ('+err+')');
             },
             function(data) {
-                // If we deleted current session, then reload the page
                 if($.inArray(_session_id, data.deleted) > -1) {
                     document.location.href = "{{ url_for('main') }}";
                 }
@@ -405,6 +395,32 @@ $(function() {
         },
         function() {
             twttr.widgets.load();
+        }
+    );
+    
+    _UrlsLoader = new AjaxLoader($('#urls'), 6,
+        function(url_counts, callback) {   
+            var urls = $.map(url_counts, function(elem, i) { return elem[0]; });           
+          
+            do_ajax("{{ url_for('urls') }}", 
+                {urls: urls},
+                function(error) {
+                    show_error(error);
+                    callback('');
+                },
+                function(data) {   
+                    var html = '';
+                    
+                    for(var i = 0; i < data.info.length; i++) {
+                        var info = data.info[i];
+                        html += '<p><a href="'+info.url+'" target="_blank">'
+                            + (info.title || info.url) 
+                            +'</a> ('+url_counts[i][1]+')</p>';
+                    }
+                    
+                    callback(html);
+                }
+            );
         }
     );
     

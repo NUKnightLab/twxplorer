@@ -14,6 +14,7 @@ _db = _conn[settings.MONGODB_NAME]
 _search = _db['search']
 _session = _db['session']
 _tweets = _db['tweets']
+_url = _db['url']
 
 # Ensure indicies
 _search.ensure_index('username')
@@ -27,3 +28,6 @@ _tweets.ensure_index([
     ('session_id', pymongo.ASCENDING), 
     ('created_at', pymongo.DESCENDING)])
 
+_url.ensure_index('url')
+_url.ensure_index('aka')
+  
