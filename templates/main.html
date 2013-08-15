@@ -105,6 +105,8 @@ var _session_id = '';
 var _stem_map = {};
 var _filter = '';       // current filter, comma-delimited string
 
+var _url_map = {};
+
 var _TermsLoader;
 var _TweetsLoader;
 var _UrlsLoader;
@@ -141,13 +143,16 @@ function do_ajax(url, data, on_error, on_success) {
     });
 }
 
+// Get the term to represent filter item in UI
 function get_term(s, sep) {
     if(s[0] == '#') {
         return s;
     }   
+    if(s in _url_map) {
+        return _url_map[s];  
+    }
     if(s in _stem_map) {    
-        return $.map(_stem_map[s], function(elem, i) { 
-            return elem[0]; }).join(sep || ',');
+        return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(sep || ',');
     }
     return s;
 }
@@ -431,10 +436,12 @@ $(function() {
                         for(var i = 0; i < data.info.length; i++) {
                             var info = data.info[i];
                             
+                            _url_map[info.url] = (info.title || info.url);
+                            
                             html += ''
                                 + '<p>'
                                 + '<span class="count">('+url_counts[i][1]+')</span>'
-                                + '<a href="javascript:void(0);" onclick="add_filter(\''+info.url+'\');">'+ (info.title || info.url) +'</a>'
+                                + '<a href="javascript:void(0);" onclick="add_filter(\''+info.url+'\');">'+ _url_map[info.url] +'</a>'
                                 + '<a class="external-link" href="'+info.url+'" target="_blank" title="open url in new window">'
                                 + '<i class="icon-external-link"></i></a>'
                                 + '</p>';
