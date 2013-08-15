@@ -129,7 +129,7 @@ function do_ajax(url, data, on_error, on_success) {
         url: url,
         data: data,
         dataType: 'json',
-        timeout: 30000, // ms
+        timeout: 45000, // ms
         error: function(xhr, status, err) {
             on_error(err);
         },

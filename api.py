@@ -493,7 +493,7 @@ def urls():
             if not r:
                 r = {'url': url, 'title': ''}
                 try:
-                    resp = urllib2.urlopen(url)
+                    resp = urllib2.urlopen(url, timeout=5)
                     element = lxml.html.parse(resp, html_parser)
                     if element:
                         r['title'] = element.find(".//title").text.strip()                    
