@@ -94,7 +94,6 @@
 </div>
 </div>
 
-
 {% endblock %}
 
 {% block script %}
@@ -108,6 +107,7 @@ var _filter = '';       // current filter, comma-delimited string
 var _url_map = {};
 
 var _TermsLoader;
+var _HashtagsLoader;
 var _TweetsLoader;
 var _UrlsLoader;
 
@@ -116,12 +116,20 @@ function not_implemented() {
     alert('Not implemented yet!');
 }
 
-function show_error(error) {        
-    $('#control_bar').after(
-        '<div class="alert alert-danger">'
-        + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
-        + error + '</div>'
-    );
+function clear_error() {
+    $('#error_alert').remove();
+}
+
+function show_error(error) {  
+    if($('#error_alert').length) {
+        $('#error_alert .error-msg').html(error);
+    } else {        
+        $('#control_bar').after(
+            '<div id="error_alert" class="alert alert-danger">'
+            + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
+            + '<span class="error-msg">'+error + '</span></div>'
+        );
+    }
 }
 
 function do_ajax(url, data, on_error, on_success) {
@@ -131,7 +139,7 @@ function do_ajax(url, data, on_error, on_success) {
         dataType: 'json',
         timeout: 45000, // ms
         error: function(xhr, status, err) {
-            on_error(err);
+            on_error(err || status);
         },
         success: function(data) {
             if(data.error) {
@@ -190,20 +198,6 @@ function show_filter() {
     $('#filter_list').html(s).show();
 }
 
-function show_hashtags(hashtag_counts) {
-    var s = '';
-    
-    for(var i = 0; i < hashtag_counts.length; i++) {
-        hashtag = hashtag_counts[i][0];
-        count = hashtag_counts[i][1];
-
-        s += '<p><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
-            + hashtag+'</a> ('+count+')</p>';
-    }
-
-    $('#hashtags').html(s ? s : '<p class="msg">no hashtags found</p>');     
-}
-
 //
 // Get stats and tweets for session_id using _filter
 //
@@ -229,10 +223,8 @@ function filter_results(session_id, callback) {
             $('#tweet_count').html(data.tweets.length+' tweets');
                      
             _TermsLoader.set_data(data.stem_counts).load_more();
-            _TweetsLoader.set_data(data.tweets).load_more();
-           
-            show_hashtags(data.hashtag_counts);
-            
+            _HashtagLoader.set_data(data.hashtag_counts).load_more();
+            _TweetsLoader.set_data(data.tweets).load_more();            
             _UrlsLoader.set_data(data.url_counts).show_loading().load_more();
                                                                         
             if(callback) {
@@ -351,6 +343,8 @@ $(function() {
         .focus();
 
     $('#search').click(function(event) {
+        clear_error();
+        
         var query = $('#query').val().trim();
         if(!query) {
             show_error('You must enter a query');
@@ -362,7 +356,7 @@ $(function() {
         do_ajax("{{ url_for('search') }}", 
             {query: query},
             function(error) {
-                show_error(error);
+                show_error('Error executing search ('+error+')');
                 $('#progress_modal').modal('hide');
             },
             function(data) {   
@@ -395,6 +389,26 @@ $(function() {
                     + '</div>'
                     + '</div>';     
             }            
+            callback(html);       
+        }
+    );
+ 
+    _HashtagLoader = new Loader($('#hashtags'), 20,
+        function(hashtag_counts, callback) {
+            var hashtag, count, html = '';
+            
+            if(hashtag_counts.length) {
+                for(var i = 0; i < hashtag_counts.length; i++) {                   
+                    hashtag = hashtag_counts[i][0];
+                    count = hashtag_counts[i][1];
+            
+                    html += ''
+                        + '<p><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
+                        + hashtag+'</a> ('+count+')</p>';
+                }  
+            } else {
+                html = '<p class="msg">no hashtags found</p>';
+            }          
             callback(html);       
         }
     );
@@ -431,10 +445,10 @@ $(function() {
                         callback('');
                     },
                     function(data) {   
-                        var html = '';
+                        var info, html = '';
                     
                         for(var i = 0; i < data.info.length; i++) {
-                            var info = data.info[i];
+                            info = data.info[i];
                             
                             _url_map[info.url] = (info.title || info.url);
                             
