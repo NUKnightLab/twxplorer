@@ -233,7 +233,7 @@ function filter_results(session_id, callback) {
            
             show_hashtags(data.hashtag_counts);
             
-            _UrlsLoader.set_data(data.url_counts).load_more();
+            _UrlsLoader.set_data(data.url_counts).show_loading().load_more();
                                                                         
             if(callback) {
                 callback();

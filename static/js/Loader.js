@@ -24,13 +24,20 @@ Loader.prototype.set_data = function(data) {
     return this;
 };
 
+Loader.prototype.show_loading = function() {
+    if(!this.target.find('.loading').length) {
+        this.target.append('<div class="loading"><i class="icon-spinner icon-spin"></i></div>')
+        .bind('scroll.loader', this.on_scroll.bind(this));
+    }    
+    return this;
+};
+
 Loader.prototype.set_html = function(html) {
     this.target.find('.loading').remove();
     this.target.append(html);
     
     if(this.next_index < (this.data.length - 1)) {
-        this.target.append('<div class="loading"><i class="icon-spinner icon-spin"></i></div>')
-        .bind('scroll.loader', this.on_scroll.bind(this));
+        this.show_loading();
     } 
 }
 
