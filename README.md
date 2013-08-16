@@ -19,9 +19,6 @@ Install [MongoDB](http://www.mongodb.org/downloads) and start the Mongo server b
     # Install requirements
     pip install -r requirements.txt
     
-    # Start the mongo server (do this in a different terminal window)
-    mongod
-    
     # Start the Flask development server
     python api.py
     
