@@ -8,14 +8,19 @@
 {% block content %}
 
 <div id='control_bar' class="row-fluid">
-    <div class="span8">
+    <div class="span9">
         <form class="form-inline">
             <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter your search query" />
+            <select id="language">
+{% for item in languages %}
+                <option value='{{ item.0 }}'>{{ item.1 }}</option>
+{% endfor %}
+            </select>
             <div class="btn-group">
                 <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
                 <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
                     <span class="caret">&nbsp;&nbsp;&nbsp;</span>
-                </button>
+                </button>                
                 <ul class="dropdown-menu">
                     <li><a id="past_searches" href="javascript:void(0);" onclick="show_history();">View past searches</a></li>
                     <li><a id="exclude_words" href="javascript:void(0);" onclick="not_implemented();">Exclude words</a></li>
@@ -23,7 +28,7 @@
             </div>    
         </form>
     </div>
-    <div id='username' class="span4">
+    <div id='username' class="span3">
     Logged in as @{{ session.username }}
     </div>
 </div>
@@ -212,6 +217,7 @@ function filter_results(session_id, callback) {
             _stem_map = data.stem_map;
             
             $('#query').val(data.query);
+            $('#language').val(data.language);
             $('#tweet_count').html(data.tweets.length+' tweets');
                      
             _TermsLoader.set_data(data.stem_counts).load_more();
@@ -283,7 +289,7 @@ function show_history() {
                     + '<div class="accordion-heading">'
                     + '<input type="checkbox" class="search" value="'+search._id+'" />'
                     + '<a class="accordion-toggle" data-toggle="collapse" data-parent="#history_accordion" href="#'+collapse_id+'">'
-                    + search.query + '</a>'
+                    + search.query + ' ('+(search.language || 'en')+')</a>'
                     + '</div>'
                     // ---
                     + '<div id="'+collapse_id+'" class="accordion-body collapse">'
@@ -333,6 +339,8 @@ $(function() {
             }
         })
         .focus();
+        
+    $('#language').val('en');
 
     $('#search').click(function(event) {
         clear_error();
@@ -346,7 +354,7 @@ $(function() {
         $('#progress_modal').modal('show');
     
         do_ajax("{{ url_for('search') }}", 
-            {query: query},
+            {query: query, language: $('#language').val()},
             function(error) {
                 show_error('Error executing search ('+error+')');
                 $('#progress_modal').modal('hide');

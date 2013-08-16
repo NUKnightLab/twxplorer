@@ -195,7 +195,8 @@ def main():
     """
     Main page for logged in user
     """
-    return render_template('main.html')
+    languages = [(v, k) for k, v in extract.stopword_languages.items()]
+    return render_template('main.html', languages=languages)
    
 @app.route("/search/", methods=['GET', 'POST'])
 @login_required
@@ -204,6 +205,7 @@ def search():
     Search twitter
     
     @query = query string
+    @language = language code, e.g. 'en'
     """
     try:
         query = request.args.get('query')
@@ -211,11 +213,17 @@ def search():
             raise Exception('No query found')
         query_lower = query.lower()
         
+        language = request.args.get('language')
+        
         # Get api object
         api = tweepy.API(get_oauth())
                             
         # Get/create search record
-        param = {'username': session['username'], 'query_lower': query_lower}
+        param = {
+            'username': session['username'], 
+            'query_lower': query_lower,
+            'language': language
+        }
         search_r = _search.find_one(param)
         if not search_r:
             search_r = param
@@ -239,19 +247,21 @@ def search():
         hashtag_counter = Counter()
         url_counter = Counter()
 
-        stopwords = extract._stopwords.copy()
+        stopwords = extract.get_stopwords(language).copy()
         stopwords.update([x.lower() for x in query_lower.split()])
+        
+        stemmer = extract.get_stemmer(language)
 
         tweets = []        
         n = 0
-        for tweet in tweepy.Cursor(api.search, q=query, count=100, \
-            result_type='recent', include_entities=True) \
+        for tweet in tweepy.Cursor(api.search, q=query, lang=language, \
+            count=100, result_type='recent', include_entities=True) \
             .items(limit=settings.TWITTER_SEARCH_LIMIT):  
                       
             tweet_dict = twutil.status_to_dict(tweet)
                        
             grams = extract.grams_from_string(tweet_dict['text'], stopwords)
-            stems = extract.stems_from_grams(grams)
+            stems = extract.stems_from_grams(grams, stemmer)
             
             terms = [' '.join(g) for g in grams]
             stems = [' '.join(s) for s in stems]
@@ -394,6 +404,7 @@ def search_results(session_id):
                            
         return _jsonify(
             query=search_r['query'],
+            language=search_r['language'],
             stem_map=session_r['stem_map'],
             stem_counts=stem_counts, 
             hashtag_counts=hashtag_counts,

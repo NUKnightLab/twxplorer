@@ -7,7 +7,8 @@
 .msg {color: #666;margin: 8px 0;text-align: center;}
 
 
-#query {width: 400px;}
+#query {width: 350px;}
+#language {width: 140px;}
 
 .filter-container {padding: 0;}
 .filter-list {margin: 0;padding: 0;min-height: 28px;}

@@ -5,10 +5,35 @@ import string
 import HTMLParser
 import nltk
 from nltk.corpus import stopwords
-from nltk.stem.snowball import PorterStemmer
+from nltk import SnowballStemmer
 
-_stopwords = set(stopwords.words('english'))
-_stopwords.update(['via', 'rt', 'thru'])
+# available languages (languages, ISO 639-1 code)
+# ref: http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+# restricted to those languages for which we have stopwords and stemmers
+stopword_languages = {
+    'danish': 'da',
+    'dutch': 'nl',
+    'english': 'en', 
+    'finnish': 'fi', 
+    'french': 'fr', 
+    'german': 'de', 
+    'hungarian': 'hu', 
+    'italian': 'it', 
+    'norwegian': 'no',
+    'portuguese': 'pt', 
+    'russian': 'ru', 
+    'spanish': 'es', 
+    'swedish': 'sv'
+}
+
+
+stopword_sets = {} # language code -> set()
+stemmers = {} # language code -> stemmer
+
+for k, v in stopword_languages.iteritems():
+    stopword_sets[v] = set(stopwords.words(k))  
+    stopword_sets[v].update(['via', 'rt', 'thru'])   
+    stemmers[v] = SnowballStemmer(k)
 
 # single letters, or all punctuation/numbers
 _re_stoplist = re.compile(r'^([a-z]|[%s\d]+)$' % string.punctuation)
@@ -34,9 +59,18 @@ _ngram_degree = 2
 # htmlparser
 _htmlparser = HTMLParser.HTMLParser()
 
-# stemmer
-_stemmer = PorterStemmer()
-
+def get_stopwords(language='en'):
+    """Return the stopwords for language"""
+    if not language in stopword_sets:
+        raise Exception('Unknown language "%s"' % language)
+    return stopword_sets[language]
+   
+def get_stemmer(language='en'):
+    """Return the stemmer for language"""
+    if not language in stemmers:
+        raise Exception('Unknown language "%s"' % language)
+    return stemmers[language]
+    
 def normalize(s):
     """Return normalized version of string."""
     s = s.encode('ascii', 'replace').replace('?', '').lower()
@@ -57,9 +91,8 @@ def stoplist_iter(it, stopwords):
     """Return True if any element should be stoplisted."""
     return any(map(lambda x: _re_stoplist.match(x) or x in stopwords, it))
 
-def grams_from_string(s, stopwords=None):
+def grams_from_string(s, stopwords):
     """Get list of grams from string"""
-    stopwords = stopwords or _stopwords
     grams = []
     
     s = _re_url.sub(' . ', s)
@@ -74,12 +107,12 @@ def grams_from_string(s, stopwords=None):
                         grams.append(g)
     return grams
 
-def stems_from_grams(grams):
-    """Get list of stems from grams"""
+def stems_from_grams(grams, stemmer):
+    """Get list of stems from grams using stemmer"""
     stems = []
     for g in grams:
         stems.append(
-            tuple([w if w.startswith('@') else _stemmer.stem(w) for w in g])
+            tuple([w if w.startswith('@') else stemmer.stem(w) for w in g])
         )
     return stems
 
