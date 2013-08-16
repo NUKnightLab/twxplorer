@@ -322,27 +322,26 @@ def search_results(session_id):
         # Find tweets
         params = {'session_id': session_id}
         
-        filter = request.args.get('filter')
+        filter = request.args.getlist('filter[]')
         filter_stems = []
         filter_hashtags = []       
         filter_urls = []
         
-        if filter:
-            for element in filter.split(','):
-                if element.startswith('#'):
-                    filter_hashtags.append(element)
-                elif element.startswith('http'):
-                    filter_urls.append(element)
-                else:
-                    filter_stems.append(element)
-                    
-            if filter_urls:
-                params['urls'] = {'$all': filter_urls}
-            if filter_stems:
-                params['stems'] = {'$all': filter_stems}
-            if filter_hashtags:
-                params['hashtags'] = {'$all': filter_hashtags}
-                  
+        for element in filter:
+            if element.startswith('#'):
+                filter_hashtags.append(element)
+            elif element.startswith('http'):
+                filter_urls.append(element)
+            else:
+                filter_stems.append(element)
+                
+        if filter_urls:
+            params['urls'] = {'$all': filter_urls}
+        if filter_stems:
+            params['stems'] = {'$all': filter_stems}
+        if filter_hashtags:
+            params['hashtags'] = {'$all': filter_hashtags}
+        
         cursor = _tweets.find(params, {
                 'embed': 1,
                 'id_str': 1,

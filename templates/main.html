@@ -102,9 +102,9 @@
 
 var _session_id = '';
 var _stem_map = {};
-var _filter = '';       // current filter, comma-delimited string
-
 var _url_map = {};
+
+var _filter = [];   // current filter      
 
 var _TermsLoader;
 var _HashtagsLoader;
@@ -165,36 +165,28 @@ function get_term(s, sep) {
     return s;
 }
 
-function set_filter(filter) {
-    _filter = filter;
-    filter_results(_session_id);    
-}
-
 function add_filter(stem) {
-    _filter += (_filter) ? ','+stem : stem;
+    _filter.push(stem);
     filter_results(_session_id);
 }
 
 function remove_filter(stem) {
-    var stems = _filter.split(',');
-    var stem_index = $.inArray(stem, stems);
+    var stem_index = $.inArray(stem, _filter);
     if(stem_index > -1) {
-        stems.splice(stem_index, 1);
+        _filter.splice(stem_index, 1);
     }
-    set_filter(stems.join(','));
+    filter_results(_session_id);
 }
 
 function show_filter() {   
     var s = '';
     
-    if(_filter) {
-        stems = _filter.split(',');
-        for(var i = 0; i < stems.length; i++) {
-            s += '<li>'+get_term(stems[i])
-                + '<button class="close" onclick="remove_filter(\''+stems[i]+'\');">&times;</button>'
-                + '</li>';      
-        }
-    }    
+    for(var i = 0; i < _filter.length; i++) {
+        s += '<li>'+get_term(_filter[i])
+            + '<button class="close" onclick="remove_filter(\''+_filter[i]+'\');">&times;</button>'
+            + '</li>';      
+    }
+    
     $('#filter_list').html(s).show();
 }
 
@@ -235,7 +227,7 @@ function filter_results(session_id, callback) {
 }
 
 function load_session(session_id, callback) {
-    _filter = '';
+    _filter = [];
     filter_results(session_id, callback);  
 }
 
