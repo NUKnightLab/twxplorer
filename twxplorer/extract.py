@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import string
+from collections import OrderedDict
 import HTMLParser
 import nltk
 from nltk.corpus import stopwords
@@ -10,21 +11,21 @@ from nltk import SnowballStemmer
 # available languages (languages, ISO 639-1 code)
 # ref: http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
 # restricted to those languages for which we have stopwords and stemmers
-stopword_languages = {
-    'danish': 'da',
-    'dutch': 'nl',
-    'english': 'en', 
-    'finnish': 'fi', 
-    'french': 'fr', 
-    'german': 'de', 
-    'hungarian': 'hu', 
-    'italian': 'it', 
-    'norwegian': 'no',
-    'portuguese': 'pt', 
-    'russian': 'ru', 
-    'spanish': 'es', 
-    'swedish': 'sv'
-}
+stopword_languages = OrderedDict([
+    ('danish', 'da'),
+    ('dutch', 'nl'),
+    ('english', 'en'), 
+    ('finnish', 'fi'), 
+    ('french', 'fr'), 
+    ('german', 'de'), 
+    ('hungarian', 'hu'), 
+    ('italian', 'it'), 
+    ('norwegian', 'no'),
+    ('portuguese', 'pt'), 
+    ('russian', 'ru'), 
+    ('spanish', 'es'), 
+    ('swedish', 'sv')
+])
 
 stopword_sets = {}  # language code -> set()
 stemmers = {}       # language code -> stemmer
