@@ -41,33 +41,42 @@
 {% endif %}
 
 <div class="row-fluid spaced">   
-    <div class="span9 filter-container">
+    <div id="tweet_count" class="span2">
+    </div>
+    <div class="span10 filter-container">
         <ul id="filter_list" class="filter-list">
         </ul>
-    </div>
-    <div id="tweet_count" class="span3">
     </div>
 </div>
 
 <div class="row-fluid">   
-    <div id='column1' class="span8">
+     <div id='tweets' class="span4">
+        <!-- tweets go here -->       
+    </div>
+   <div id='column1' class="span8">
         <div class="row-fluid spaced">   
-            <div id='terms' class="span7 frame">
-            <!-- terms go here --> 
-   
+            <div class="span7 frame">
+                <div class="frame-header">Terms</div>
+                <div id='terms' class="frame-body">
+                    <!-- terms go here --> 
+                </div>
             </div>
-            <div id='hashtags' class="span5 frame">
-            <!-- hashtags go here -->     
+            <div class="span5 frame">
+                <div class="frame-header">Hashtags</div>
+                <div id="hashtags" class="frame-body">
+                    <!-- hashtags go here -->
+                </div>   
             </div>
         </div>
         <div class="row-fluid">
-            <div id="urls" class="span12 frame">
+            <div class="span12 frame">
+                <div class="frame-header">URLs</div>
+                <div id="urls" class="frame-body">
+                    <!-- hashtags go here -->
+                </div>   
             </div>
         </div>
     </div>    
-    <div id='tweets' class="span4">
-        <!-- tweets go here -->       
-    </div>
 </div>
 
 <div id="progress_modal" class="modal fade">
