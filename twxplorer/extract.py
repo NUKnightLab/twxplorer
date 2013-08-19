@@ -26,16 +26,16 @@ stopword_languages = {
     'swedish': 'sv'
 }
 
-
-stopword_sets = {} # language code -> set()
-stemmers = {} # language code -> stemmer
+stopword_sets = {}  # language code -> set()
+stemmers = {}       # language code -> stemmer
 
 for k, v in stopword_languages.iteritems():
     stopword_sets[v] = set(stopwords.words(k))  
     stopword_sets[v].update(['via', 'rt', 'thru'])   
     stemmers[v] = SnowballStemmer(k)
 
-# single letters, or all punctuation/numbers
+
+# single letters, all punctuation/numbers, or usermention
 _re_stoplist = re.compile(r'^([a-z]|[%s\d]+)$' % string.punctuation)
 
 # match urls
@@ -52,9 +52,6 @@ _re_punctuation = re.compile(r'[%s]+' % string.punctuation.replace('@', ''))
 
 # extra space
 _re_extraspace = re.compile(r'( )+')
-
-# maximum gram degree (e.g. 2 = bigrams)
-_ngram_degree = 2
 
 # htmlparser
 _htmlparser = HTMLParser.HTMLParser()
@@ -87,26 +84,30 @@ def normalize(s):
 
     return _re_extraspace.sub(' ', norm).strip()
 
-def stoplist_iter(it, stopwords):
-    """Return True if any element should be stoplisted."""
-    return any(map(lambda x: _re_stoplist.match(x) or x in stopwords, it))
-
-def grams_from_string(s, stopwords):
-    """Get list of grams from string"""
-    grams = []
+def tokenize(s):
+    """
+    Get tokens from string
+    @return     list of lists
+    """
+    tokens = []
     
     s = _re_url.sub(' . ', s)
     s = _htmlparser.unescape(s)
-
+    
     for clause in _re_clause.split(s):
-        tokens = normalize(clause).split()
-        if tokens:
-            for n in range(1, _ngram_degree+1):
-                for g in nltk.ngrams(tokens, n):
-                    if not stoplist_iter(g, stopwords):
-                        grams.append(g)
-    return grams
+        items = normalize(clause).strip().split()
+        if items:
+            tokens.append(items)    
+    return tokens
 
+def stoplist(token, stopwords):
+    """Return True if token should be stoplisted."""
+    return _re_stoplist.match(token) or token in stopwords
+    
+def stoplist_iter(it, stopwords):
+    """Return True if any element should be stoplisted."""
+    return any(map(lambda x: _re_stoplist.match(x) or x in stopwords, it))
+        
 def stems_from_grams(grams, stemmer):
     """Get list of stems from grams using stemmer"""
     stems = []
@@ -115,8 +116,6 @@ def stems_from_grams(grams, stemmer):
             tuple([w if w.startswith('@') else stemmer.stem(w) for w in g])
         )
     return stems
-
-              
 
             
     

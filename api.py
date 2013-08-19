@@ -16,6 +16,7 @@ import tweepy
 import pymongo
 import urllib2
 import lxml.html
+import nltk
 
 
 # Import settings module
@@ -82,7 +83,7 @@ class APIEncoder(json.JSONEncoder):
         if isinstance(obj, datetime.datetime):
             return obj.isoformat()
         if isinstance(obj, bson.ObjectId):
-            return str(obj)        
+            return str(obj)    
         return json.JSONEncoder.default(self, obj)
 
 def _request_wants_json():
@@ -213,7 +214,7 @@ def search():
             raise Exception('No query found')
         query_lower = query.lower()
         
-        language = request.args.get('language')
+        language = request.args.get('language') or 'en'
         
         # Get api object
         api = tweepy.API(get_oauth())
@@ -240,64 +241,99 @@ def search():
         }
         session_r['_id'] = _session.save(session_r, manipulate=True)
         session_id = str(session_r['_id'])
-        
+ 
         # Process tweets
-        stem_map = defaultdict(Counter)
-        stem_counter = Counter()
-        hashtag_counter = Counter()
-        url_counter = Counter()
-
         stopwords = extract.get_stopwords(language).copy()
         stopwords.update([x.lower() for x in query_lower.split()])
         
         stemmer = extract.get_stemmer(language)
 
-        tweets = []        
-        n = 0
+        stem_map = defaultdict(Counter)       
+
+        tweet_list = []      
+          
         for tweet in tweepy.Cursor(api.search, q=query, lang=language, \
             count=100, result_type='recent', include_entities=True) \
             .items(limit=settings.TWITTER_SEARCH_LIMIT):  
-                      
-            tweet_dict = twutil.status_to_dict(tweet)
-                       
-            grams = extract.grams_from_string(tweet_dict['text'], stopwords)
-            stems = extract.stems_from_grams(grams, stemmer)
-            
-            terms = [' '.join(g) for g in grams]
-            stems = [' '.join(s) for s in stems]
-                      
-            for s, t in zip(stems, terms):
-                stem_map[s].update([t])
-            
-            stem_set = set(stems)
-            stem_counter.update(stem_set)
 
-            hashtag_set = set(['#'+x['text'].lower() \
-                for x in tweet_dict['entities']['hashtags']]) 
-            hashtag_counter.update(hashtag_set)
-                            
-            url_set = set([x['expanded_url'] \
-                for x in tweet_dict['entities']['urls']])                
-            url_counter.update(url_set)            
-                     
+            tweet_dict = twutil.status_to_dict(tweet)
+                                        
             tweet_dict['session_id'] = session_id
-            tweet_dict['stems'] = list(stem_set)    
-            tweet_dict['hashtags'] = list(hashtag_set)
-            tweet_dict['urls'] = list(url_set)
-            tweet_dict['embed'] = twutil.format_text(tweet_dict)       
-            tweets.append(tweet_dict)
-            n += 1
+            tweet_dict['embed'] = twutil.format_text(tweet_dict)              
+            tweet_dict['tokens'] = extract.tokenize(tweet_dict['text'])
+            tweet_dict['hashtags'] = list(set(['#'+x['text'].lower() \
+                for x in tweet_dict['entities']['hashtags']]))
+            tweet_dict['urls'] = list(set([x['expanded_url'] \
+                for x in tweet_dict['entities']['urls']]))
             
+            tweet_list.append(tweet_dict)
+
+        # Process bigrams
+        bigram_counter = Counter()
+        
+        for tweet in tweet_list:
+            grams = []
+            
+            for tokens in tweet['tokens']:
+                for g in nltk.ngrams(tokens, 2):
+                    if extract.stoplist_iter(g, stopwords):
+                        continue                        
+                    if g[0].startswith('@') or g[1].startswith('@'):
+                        continue                        
+                    grams.append(g)
+                        
+            stems = extract.stems_from_grams(grams, stemmer)                                                            
+            for s, g in zip(stems, grams):
+                stem_map[s].update([g]) 
+                               
+            tweet['stems'] = list(set(stems))
+            bigram_counter.update(tweet['stems'])            
+             
+        # Ignore bigrams that only appear once
+        for g, n in bigram_counter.items():
+            if n < 2:
+                del bigram_counter[g]
+                del stem_map[g]
+                 
+        # Filter bigrams, process unigrams              
+        for tweet in tweet_list:
+            grams = []
+            stems = []
+            
+            for tokens in tweet['tokens']:
+                last_i = len(tokens) - 1
+                               
+                gram_list = nltk.ngrams(tokens, 1)
+                stem_list = extract.stems_from_grams(gram_list, stemmer)
+                               
+                for i, g in enumerate(gram_list):
+                    if extract.stoplist_iter(g, stopwords):
+                        continue
+                    if i > 0 and \
+                    (stem_list[i-1][0], stem_list[i][0]) in bigram_counter:
+                        continue
+                    if i < last_i and \
+                    (stem_list[i][0], stem_list[i+1][0]) in bigram_counter:
+                        continue
+                
+                    grams.append(g)
+                    stems.append(stem_list[i])
+                        
+            for s, g in zip(stems, grams):
+                stem_map[s].update([g]) 
+          
+            tweet['stems'] = [' '.join(x) for x in tweet['stems'] if x in bigram_counter]
+            tweet['stems'].extend([' '.join(x) for x in set(stems)])              
+                        
         # Update session
         for stem, c in stem_map.iteritems():
-            session_r['stem_map'][stem] = c.most_common()            
-        session_r['stem_counts'] = stem_counter.most_common()
-        session_r['hashtag_counts'] = hashtag_counter.most_common()
-        session_r['url_counts'] = url_counter.most_common()
+            session_r['stem_map'][' '.join(stem)] = \
+                [' '.join(k) for k, v in c.most_common()]        
+        
         _session.save(session_r)
         
         # Save tweets
-        _tweets.insert(tweets)   
+        _tweets.insert(tweet_list)   
         
         return _jsonify(session=session_r)
     except tweepy.TweepError, e:

@@ -165,7 +165,8 @@ function get_term(s, sep) {
         return _url_map[s];  
     }
     if(s in _stem_map) {    
-        return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(sep || ',');
+        return _stem_map[s].join(sep || ',');
+        //return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(sep || ',');
     }
     return s;
 }
@@ -425,6 +426,7 @@ $(function() {
                     + '<p>'+tweet.text+'</p>&mdash; '+tweet.user_name + ' (@'+tweet.user_screen_name+')'
                     + '<a href="https://twitter.com/twitterapi/status/'+tweet.id_str+'">'+tweet.created_at+'</a>'               
                     + '</blockquote>';
+                //html += '<p>'+tweet.id_str+'</p>';
             }
             callback(html);
         },
