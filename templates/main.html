@@ -13,7 +13,7 @@
             <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter your search query" />
             <select id="language">
 {% for item in languages %}
-                <option value='{{ item.0 }}'>{{ item.1 }}</option>
+                <option value='{{ item.0 }}'>{{ item.1|capitalize }}</option>
 {% endfor %}
             </select>
             <div class="btn-group">
