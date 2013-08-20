@@ -50,11 +50,13 @@
     </div>
 </div>
 
+{% if searches|length %}
 <div class="row-fluid">
     <div class="span12">
     <button id="history_delete" class="btn btn-danger" onclick="delete_selected_history();">Delete Selected Searches</button>
     </div>
 </div>
+{% endif %}
 
 {% endblock %}
 
