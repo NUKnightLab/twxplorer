@@ -5,14 +5,14 @@ import datetime
 import re
 import tweepy
 
-def status_to_dict(status_obj):
+def tweepy_model_to_dict(status_obj):
     """Convert a tweepy status object to a dictionary""" 
     d = {}
     for key, value in status_obj.__getstate__().iteritems():
         if isinstance(value, datetime.datetime):
             d[key] = value.isoformat()
         elif isinstance(value, tweepy.models.Model):
-            d[key] = status_to_dict(value)
+            d[key] = tweepy_model_to_dict(value)
         else:
             d[key] = value    
     return d

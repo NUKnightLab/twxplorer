@@ -15,6 +15,8 @@ _search = _db['search']
 _session = _db['session']
 _tweets = _db['tweets']
 _url = _db['url']
+_list = _db['list']
+
 
 # Ensure indicies
 _search.ensure_index('username')
@@ -30,4 +32,6 @@ _tweets.ensure_index([
 
 _url.ensure_index('url')
 _url.ensure_index('aka')
+
+_list.ensure_index('username')
   

@@ -50,6 +50,9 @@
         <div class="nav-collapse navbar-responsive-collapse collapse" style="height: 0px;">
          <ul class="nav">
             {% if session.username %}
+            <li><a href="{{ url_for('search') }}">Search</a></li>           
+            <li><a href="{{ url_for('lists') }}">Lists</a></li>           
+            <li><a href="{{ url_for('history') }}">History</a></li>           
             <li><a href="{{ url_for('logout') }}">Logout</a></li>           
             {% endif %}
           </ul>

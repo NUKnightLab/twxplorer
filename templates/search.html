@@ -3,6 +3,7 @@
 {% block extrahead %}
 <script type="application/javascript" src="http://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/Loader.js" charset="utf-8"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/common.js" charset="utf-8"></script>
 {% endblock %}
 
 {% block content %}
@@ -13,19 +14,10 @@
             <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter your search query" />
             <select id="language">
 {% for item in languages %}
-                <option value='{{ item.0 }}'>{{ item.1|capitalize }}</option>
+                <option value='{{ item.1 }}'>{{ item.0|capitalize }}</option>
 {% endfor %}
             </select>
-            <div class="btn-group">
-                <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
-                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                    <span class="caret">&nbsp;&nbsp;&nbsp;</span>
-                </button>                
-                <ul class="dropdown-menu">
-                    <li><a id="past_searches" href="javascript:void(0);" onclick="show_history();">View past searches</a></li>
-                    <li><a id="exclude_words" href="javascript:void(0);" onclick="not_implemented();">Exclude words</a></li>
-                </ul>
-            </div>    
+            <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
         </form>
     </div>
     <div id='username' class="span3">
@@ -99,32 +91,13 @@
 </div>
 </div>
 
-<div id="history_modal" class="modal fade">
-<div class="modal-dialog">
-<div class="modal-content">
-    <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title">Search History</h4>
-    </div>
-    <div class="modal-body">
-        <div class="accordion" id="history_accordion">
-        </div>
-    </div>
-    <div class="modal-footer">
-        <button type="button" id='history_delete' class="btn btn-default" onclick="delete_selected_history();">Delete Selected</button>
-        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-    </div>
-</div>
-</div>
-</div>
-
 {% endblock %}
 
 {% block script %}
 
 <script type="text/javascript">
 
-var _session_id = '';
+var _session_id = '{{ session_id }}';
 var _stem_map = {};
 var _url_map = {};
 
@@ -136,45 +109,6 @@ var _TweetsLoader;
 var _UrlsLoader;
 
 
-function not_implemented() {
-    alert('Not implemented yet!');
-}
-
-function clear_error() {
-    $('#error_alert').remove();
-}
-
-function show_error(error) {  
-    if($('#error_alert').length) {
-        $('#error_alert .error-msg').html(error);
-    } else {        
-        $('#control_bar').after(
-            '<div id="error_alert" class="alert alert-danger">'
-            + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
-            + '<span class="error-msg">'+error + '</span></div>'
-        );
-    }
-}
-
-function do_ajax(url, data, on_error, on_success) {
-    $.ajax({
-        url: url,
-        data: data,
-        dataType: 'json',
-        timeout: 45000, // ms
-        error: function(xhr, status, err) {
-            on_error(err || status);
-        },
-        success: function(data) {
-            if(data.error) {
-                on_error(data.error);
-            } else {
-                on_success(data);
-            }
-        }
-    });
-}
-
 // Get the term to represent filter item in UI
 function get_term(s, sep) {
     if(s[0] == '#') {
@@ -185,7 +119,6 @@ function get_term(s, sep) {
     }
     if(s in _stem_map) {    
         return _stem_map[s].join(sep || ',');
-        //return $.map(_stem_map[s], function(elem, i) { return elem[0]; }).join(sep || ',');
     }
     return s;
 }
@@ -225,7 +158,7 @@ function filter_results(session_id, callback) {
     
     $('#terms, #hashtags, #urls, #tweets, #tweet_count').html('');
         
-    do_ajax('/search/'+_session_id+'/', 
+    do_ajax('/filter/'+_session_id+'/', 
         {filter: _filter},
         function(err) {
             show_error('Error filtering results ('+err+')');
@@ -257,86 +190,6 @@ function load_session(session_id, callback) {
     filter_results(session_id, callback);  
 }
 
-
-//
-// History
-//
-
-function delete_selected_history() {
-    if(confirm("Delete selected search sessions?")) {
-        var searches = [];
-        var sessions = [];
-        
-        $('#history_modal').modal('hide');
-    
-        $('#history_accordion input.search:checked').each(function() {
-            searches.push($(this).val());
-        });
-        
-        $('#history_accordion input.session:checked').each(function() {
-            sessions.push($(this).val());
-        });
-        
-        do_ajax("{{ url_for('history_delete') }}",
-            {searches: searches, sessions: sessions},
-            function(err) {
-                show_error('Error deleting searches ('+err+')');
-            },
-            function(data) {
-                if($.inArray(_session_id, data.deleted) > -1) {
-                    document.location.href = "{{ url_for('main') }}";
-                }
-            }
-        );            
-    }
-}
-
-function show_history() {
-    do_ajax("{{ url_for('history') }}", 
-        {},
-        function(err) {
-            show_error('Error getting search history ('+err+')');
-        },
-        function(data) {
-            var s = '';
-            
-            for(var i = 0, searches = data.searches; i < searches.length; i++) {
-                var search = searches[i];
-                var collapse_id = 'collapse_'+search._id;
-                
-                s += '<div class="accordion-group">'
-                    // ---
-                    + '<div class="accordion-heading">'
-                    + '<input type="checkbox" class="search" value="'+search._id+'" />'
-                    + '<a class="accordion-toggle" data-toggle="collapse" data-parent="#history_accordion" href="#'+collapse_id+'">'
-                    + search.query + ' ('+(search.language || 'en')+')</a>'
-                    + '</div>'
-                    // ---
-                    + '<div id="'+collapse_id+'" class="accordion-body collapse">'
-                    + '<div class="accordion-inner">';
-                              
-                for(var j = 0, sessions = search.sessions; j < sessions.length; j++) {
-                    s += '<p>'
-                        + '<input type="checkbox" class="session" value="'+sessions[j]._id+'" />'
-                        + '<a href="javascript:void(0);" data-dismiss="modal" onclick="load_session(\''+sessions[j]._id+'\');">'
-                        + sessions[j].dt+'</a>'
-                        + '</p>';
-                }          
-                
-                s += '</div></div></div>';           
-            }
-            
-            if(data.searches.length) {
-                $('#history_delete').show();
-            } else {
-                $('#history_delete').hide();
-            } 
-            $('#history_accordion').html(s ? s : '<p>No past searches found</p>');            
-            $('#history_modal').modal('show');
-        }
-    );
-}
-
 //
 // on load
 //
@@ -346,11 +199,6 @@ $(function() {
         show: false
     })
     
-    $('#history_modal').modal({
-        keyboard: false,
-        show: false
-    })
-
     $('#query')
         .keypress(function(event) {
             if(event.which == 13) {
@@ -360,8 +208,9 @@ $(function() {
         })
         .focus();
         
-    $('#language').val('en');
+    $('#language').val('{{ session.language }}');
 
+    
     $('#search').click(function(event) {
         clear_error();
         
@@ -373,8 +222,8 @@ $(function() {
     
         $('#progress_modal').modal('show');
     
-        do_ajax("{{ url_for('search') }}", 
-            {query: query, language: $('#language').val()},
+        do_ajax("{{ url_for('analyze') }}", 
+            {language: $('#language').val(), query: query},
             function(error) {
                 show_error('Error executing search ('+error+')');
                 $('#progress_modal').modal('hide');
@@ -491,6 +340,12 @@ $(function() {
         }
     );
     
+    //
+    // LOAD SESSION?
+    //
+    if(_session_id) {
+        load_session(_session_id);
+    }    
 });
 
 </script>

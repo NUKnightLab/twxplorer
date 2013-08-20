@@ -32,7 +32,7 @@ except ImportError, e:
     raise ImportError("Could not import settings module '%s': %s" % (settings_module, e))
 
 
-from twxplorer.connection import _search, _session, _tweets, _url
+from twxplorer.connection import _search, _session, _tweets, _url, _list
 from twxplorer import extract, twutil
 
 app = Flask(__name__)
@@ -156,6 +156,14 @@ def auth_verify():
     oauth.get_access_token(verifier=request.args.get('oauth_verifier'))
     session['access_token_key'] = oauth.access_token.key
     session['access_token_secret'] = oauth.access_token.secret
+    
+    # Get user language
+    try:
+        user_obj = tweepy.API(oauth).me()
+        session['language'] = user_obj.lang
+    except:
+        session['language'] = 'en'
+
     return redirect(url_for('index'))  
 
 
@@ -182,53 +190,157 @@ def index(name=''):
     """    
     try:
         if is_logged_in():
-            return redirect(url_for('main'))
+            return redirect(url_for('search'))
             
         return render_template('index.html')
     except Exception, e:
         traceback.print_exc()
         return render_template('index.html', error=str(e))
         
-
-@app.route("/main/", methods=['GET', 'POST'])
-@login_required
-def main():
-    """
-    Main page for logged in user
-    """
-    languages = [(v, k) for k, v in extract.stopword_languages.items()]
-    return render_template('main.html', languages=languages)
-   
 @app.route("/search/", methods=['GET', 'POST'])
+@app.route("/search/<session_id>/", methods=['GET', 'POST'])
 @login_required
-def search():
+def search(session_id=''):
     """
-    Search twitter
-    
-    @query = query string
-    @language = language code, e.g. 'en'
+    Search by query page
+    """
+    return render_template('search.html', session_id=session_id,
+        languages=extract.stopword_languages)
+       
+@app.route("/lists/", methods=['GET', 'POST'])
+@app.route("/lists/<session_id>/", methods=['GET', 'POST'])
+@login_required
+def lists(session_id=''):
+    """
+    Search by list page
     """
     try:
-        query = request.args.get('query')
-        if not query:
-            raise Exception('No query found')
-        query_lower = query.lower()
+        username = session.get('username')
+        delta = datetime.timedelta(minutes=5)
+        refresh = False
         
+        list_r = _list.find_one({'username': username})
+        if not list_r:
+            refresh = True
+        elif (list_r['dt'] + delta) < datetime.datetime.now():
+            refresh = True
+        
+        if refresh:
+            api = tweepy.API(get_oauth())
+
+            lists = []
+            for r in api.lists_all(screen_name=session.get('username')):
+                lists.append({
+                    'id_str': r.id_str,
+                    'slug': r.slug,
+                    'name': r.name,
+                    'full_name': r.full_name
+                })
+            
+            list_r = {
+                'username': username, 
+                'dt': datetime.datetime.now(),
+                'lists': lists
+            }          
+            list_r['_id'] = _list.save(list_r, manipulate=True)
+
+        return render_template('lists.html', session_id=session_id,
+            languages=extract.stopword_languages, lists=list_r['lists'])
+    except Exception, e:
+        traceback.print_exc()
+        return render_template('lists.html', error=str(e))
+        
+
+@app.route("/history/", methods=['GET', 'POST'])
+@login_required
+def history():
+    """
+    Get search history, grouped by search -> session
+    """
+    try:
+        searches = []
+        lists = []
+        
+        list_r = _list.find_one({'username': session['username']})
+        list_map = {}
+        if list_r:
+            for r in list_r['lists']:
+                list_map[r['id_str']] = r['full_name']
+        
+        search_cursor = _search.find(
+            {'username': session['username']},
+            sort=[('query', pymongo.ASCENDING)]
+        )
+        for search_r in search_cursor:
+            search_r['_id'] = str(search_r['_id'])
+            
+            if 'list_id' in search_r:
+                search_r['full_name'] = list_map.get(search_r['list_id']) \
+                    or '[unknown]'
+            search_r['sessions'] = []
+           
+            session_cursor = _session.find(
+                {'search_id': search_r['_id']},
+                fields=['_id', 'dt'],
+                sort=[('dt', pymongo.DESCENDING)]
+            )
+            for session_r in session_cursor:
+                session_r['_id'] = str(session_r['_id'])
+                session_r['dt'] = datetime.datetime \
+                    .strptime(session_r['dt'], '%Y-%m-%dT%H:%M:%S.%f') \
+                    .strftime('%b %d %Y %H:%M:%S')
+                    
+                search_r['sessions'].append(session_r)
+                
+            searches.append(search_r)
+                        
+        return render_template('history.html', 
+            searches=searches, lists=lists)
+    except Exception, e:
+        traceback.print_exc()
+        return render_template('history.html', error=str(e))
+
+
+@app.route("/analyze/", methods=['GET', 'POST'])
+@login_required
+def analyze():
+    """
+    Get tweets from twitter and analyze them
+    
+    @language = language code, e.g. 'en'
+    
+    @query = query string
+        OR
+    @list_id = list id
+     """
+    try:
         language = request.args.get('language') or 'en'
+
+        query = request.args.get('query')
+        list_id = request.args.get('list_id')
         
+        if query:
+            query_lower = query.lower()
+        elif not list_id:    
+            raise Exception('List not found')                  
+               
         # Get api object
         api = tweepy.API(get_oauth())
                             
         # Get/create search record
         param = {
             'username': session['username'], 
-            'query_lower': query_lower,
             'language': language
         }
+        if query:
+            param['query_lower'] = query_lower
+        else:
+            param['list_id'] = list_id
         search_r = _search.find_one(param)
         if not search_r:
             search_r = param
-            search_r['query'] = query
+            if query:
+                search_r['query'] = query           
             search_r['_id'] = _search.save(search_r, manipulate=True)
         search_id = str(search_r['_id'])
         
@@ -243,20 +355,23 @@ def search():
         session_id = str(session_r['_id'])
  
         # Process tweets
-        stopwords = extract.get_stopwords(language).copy()
-        stopwords.update([x.lower() for x in query_lower.split()])
-        
+        stopwords = extract.get_stopwords(language).copy()        
         stemmer = extract.get_stemmer(language)
-
         stem_map = defaultdict(Counter)       
-
         tweet_list = []      
+        
+        if query:
+            stopwords.update([x.lower() for x in query_lower.split()])
+            cursor = tweepy.Cursor(api.search, q=query, lang=language, \
+                count=100, result_type='recent', include_entities=True) 
+        else:
+            print 'list_id', list_id
+            cursor = tweepy.Cursor(api.list_timeline, list_id=list_id, \
+                count=100, include_entities=True)
           
-        for tweet in tweepy.Cursor(api.search, q=query, lang=language, \
-            count=100, result_type='recent', include_entities=True) \
-            .items(limit=settings.TWITTER_SEARCH_LIMIT):  
+        for tweet in cursor.items(limit=settings.TWITTER_SEARCH_LIMIT):  
 
-            tweet_dict = twutil.status_to_dict(tweet)
+            tweet_dict = twutil.tweepy_model_to_dict(tweet)
                                         
             tweet_dict['session_id'] = session_id
             tweet_dict['embed'] = twutil.format_text(tweet_dict)              
@@ -344,9 +459,9 @@ def search():
         return _jsonify(error=str(e))
 
                     
-@app.route("/search/<session_id>/", methods=['GET', 'POST'])
+@app.route("/filter/<session_id>/", methods=['GET', 'POST'])
 @login_required
-def search_results(session_id):
+def filter(session_id):
     """
     Get histogram and tweets
     
@@ -439,7 +554,8 @@ def search_results(session_id):
             if x[0] not in filter_urls]
                            
         return _jsonify(
-            query=search_r['query'],
+            query=search_r.get('query', ''),
+            list_id=search_r.get('list_id', ''),
             language=search_r['language'],
             stem_map=session_r['stem_map'],
             stem_counts=stem_counts, 
@@ -450,46 +566,7 @@ def search_results(session_id):
     except Exception, e:
         traceback.print_exc()
         return _jsonify(error=str(e))
-    
-
-@app.route("/history/", methods=['GET', 'POST'])
-@login_required
-def history():
-    """
-    Get search history, grouped by search -> session
-    """
-    try:
-        searches = []
         
-        search_cursor = _search.find(
-            {'username': session['username']},
-            sort=[('query', pymongo.ASCENDING)]
-        )
-        for search_r in search_cursor:
-            search_r['_id'] = str(search_r['_id'])
-            search_r['sessions'] = []
-           
-            session_cursor = _session.find(
-                {'search_id': search_r['_id']},
-                fields=['_id', 'dt'],
-                sort=[('dt', pymongo.DESCENDING)]
-            )
-            for session_r in session_cursor:
-                session_r['_id'] = str(session_r['_id'])
-                session_r['dt'] = datetime.datetime \
-                    .strptime(session_r['dt'], '%Y-%m-%dT%H:%M:%S.%f') \
-                    .strftime('%b %d %Y %H:%M:%S')
-                    
-                search_r['sessions'].append(session_r)
-                
-            searches.append(search_r)
-                        
-        return _jsonify(searches=searches)
-    except Exception, e:
-        traceback.print_exc()
-        return _jsonify(error=str(e))
-
-
 @app.route("/history/delete/", methods=['GET', 'POST'])
 @login_required
 def history_delete():

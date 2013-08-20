@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h4 id="page_header">History</h4>
+
+{% if error %}
+<div class="alert alert-danger">
+    <button type="button" class="close" data-dismiss="alert">&times;</button>
+    {{ error }}
+</div>
+{% endif %}
+
+<div class="row-fluid">
+    <div class="span12">
+{% if searches|length %}
+        <div class="accordion" id="history_accordion">
+    {% for search in searches %}
+        <div class="accordion-group">
+             <div class="accordion-heading">
+                <input type="checkbox" class="search" value="{{ search._id }}" />
+                <a class="accordion-toggle collapsed" data-toggle="collapse" data-parent="#history_accordion" href="#collapse_{{ search._id }}">
+        {% if search.query %}
+                    {{ search.query }} ({{ search.language }})   
+        {% else %}
+                    {{ search.full_name }} ({{ search.language }})
+        {% endif %}
+                </a>
+            </div>
+            <div id="collapse_{{ search._id }}" class="accordion-body collapse">
+                <div class="accordion-inner">
+        {% for sess in search.sessions %}    
+                    <div class="accordion-row">       
+                        <input type="checkbox" class="session" value="{{ sess._id }}" />
+            {% if search.query %}
+                        <p><a href='/search/{{ sess._id }}/'>{{ sess.dt }}</a></p>
+            {% else %}
+                        <p><a href='/lists/{{ sess._id }}/'>{{ sess.dt }}</a></p>
+            {% endif %}
+                    </div>
+        {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+        </div>
+{% else %}
+        <p>No previous searches found.</p>
+{% endif %}
+    </div>
+</div>
+
+<div class="row-fluid">
+    <div class="span12">
+    <button id="history_delete" class="btn btn-danger" onclick="delete_selected_history();">Delete Selected Searches</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block script %}
+
+<script type="text/javascript">
+
+function delete_selected_history() {
+    var searches = [];
+    var sessions = [];
+
+    $('.accordion input.search:checked').each(function() {
+        searches.push($(this).val());
+    });
+    
+    $('.accordion input.session:checked').each(function() {
+        sessions.push($(this).val());
+    });
+
+    if(!(searches.length || sessions.length)) {
+        alert('No searches selected');
+    } else if(confirm("Delete selected search results?")) {
+        do_ajax("{{ url_for('history_delete') }}",
+            {searches: searches, sessions: sessions},
+            function(err) {
+                show_error('Error deleting searches ('+err+')');
+            },
+            function(data) {
+                document.location.href = "{{ url_for('history') }}";
+            }
+        );            
+    }
+}
+
+$(function() {
+
+    // noop
+});
+
+</script>
+
+{% endblock %}

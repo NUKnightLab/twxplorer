@@ -2,7 +2,6 @@ import sys
 import os
 import re
 import string
-from collections import OrderedDict
 import HTMLParser
 import nltk
 from nltk.corpus import stopwords
@@ -11,7 +10,7 @@ from nltk import SnowballStemmer
 # available languages (languages, ISO 639-1 code)
 # ref: http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
 # restricted to those languages for which we have stopwords and stemmers
-stopword_languages = OrderedDict([
+stopword_languages = [
     ('danish', 'da'),
     ('dutch', 'nl'),
     ('english', 'en'), 
@@ -25,15 +24,15 @@ stopword_languages = OrderedDict([
     ('russian', 'ru'), 
     ('spanish', 'es'), 
     ('swedish', 'sv')
-])
+]
 
 stopword_sets = {}  # language code -> set()
 stemmers = {}       # language code -> stemmer
 
-for k, v in stopword_languages.iteritems():
-    stopword_sets[v] = set(stopwords.words(k))  
-    stopword_sets[v].update(['via', 'rt', 'thru'])   
-    stemmers[v] = SnowballStemmer(k)
+for (lang_name, lang_code) in stopword_languages:
+    stopword_sets[lang_code] = set(stopwords.words(lang_name))  
+    stopword_sets[lang_code].update(['via', 'rt', 'thru'])   
+    stemmers[lang_code] = SnowballStemmer(lang_name)
 
 
 # single letters, all punctuation/numbers, or usermention

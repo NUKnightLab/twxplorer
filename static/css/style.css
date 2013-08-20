@@ -10,9 +10,17 @@
 .loading {margin: 8px 0;text-align: center;}
 .msg {color: #666;margin: 8px 0;text-align: center;}
 
+/*
+CONTROL BAR AREA
+*/
 #query {width: 350px;}
 #language {width: 140px;}
 
+#list {width: 450px;}
+
+/* 
+FILTERS
+*/
 .filter-container {padding: 0;}
 .filter-list {margin: 0;padding: 0;min-height: 28px;}
 
@@ -51,5 +59,10 @@
 
 #tweets {height: 614px;overflow: auto;}
 
-#history_accordion .accordion-heading input[type=checkbox] {float: right;margin: 10px 15px 10px 10px;}
-#history_accordion .accordion-inner input[type=checkbox] {float: right;margin: 6px 0 10px 10px;}
+
+/* 
+HISTORY
+*/
+.accordion-heading input[type=checkbox] {float: right;margin: 14px 15px 10px 10px;}
+.accordion-inner input[type=checkbox] {float: right;margin: 6px 0 10px 10px;}
+#history_delete {float: right;}
