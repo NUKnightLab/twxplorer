@@ -199,17 +199,17 @@ function load_session(session_id, callback) {
 // on load
 //
 $(function() {
-    $('#progress_modal').modal({
-        keyboard: false,
-        show: false
-    })
+    $('#progress_modal').modal({keyboard: false, show: false})
             
-    $('#language').val('{{ session.language }}');
+    if($('#language option[value={{ session.language }}]').length) {
+        $('#language').val('{{ session.language }}');
+    } else {
+        $('#language').val('en');
+    }
 
     $('#search').click(function(event) {
         clear_error();
         
-        // TODO: CHECK FOR WHATEVER
         var list_id = $('#list').val();
         if(!list_id) {
             show_error('You must select a list');
