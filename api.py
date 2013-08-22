@@ -216,7 +216,7 @@ def lists(session_id=''):
     """
     try:
         username = session.get('username')
-        delta = datetime.timedelta(minutes=5)
+        delta = datetime.timedelta(minutes=15)
         refresh = False
         
         list_r = _list.find_one({'username': username})
@@ -229,7 +229,7 @@ def lists(session_id=''):
             api = tweepy.API(get_oauth())
 
             lists = []
-            for r in api.lists_all(screen_name=session.get('username')):
+            for r in api.lists_all(screen_name=username):
                 lists.append({
                     'id_str': r.id_str,
                     'slug': r.slug,
@@ -244,6 +244,12 @@ def lists(session_id=''):
             }          
             list_r['_id'] = _list.save(list_r, manipulate=True)
 
+        return render_template('lists.html', session_id=session_id,
+            languages=extract.stopword_languages, lists=list_r['lists'])
+    except tweepy.TweepError, e:
+        traceback.print_exc()
+        if not list_r:
+            raise Exception(e.message[0]['message'])
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, lists=list_r['lists'])
     except Exception, e:
@@ -280,7 +286,7 @@ def history():
             search_r['sessions'] = []
            
             session_cursor = _session.find(
-                {'search_id': search_r['_id']},
+                {'search_id': search_r['_id'], 'saved': 1},
                 fields=['_id', 'dt'],
                 sort=[('dt', pymongo.DESCENDING)]
             )
@@ -292,7 +298,8 @@ def history():
                     
                 search_r['sessions'].append(session_r)
                 
-            searches.append(search_r)
+            if search_r['sessions']:
+                searches.append(search_r)
                         
         return render_template('history.html', 
             searches=searches, lists=lists)
@@ -365,7 +372,6 @@ def analyze():
             cursor = tweepy.Cursor(api.search, q=query, lang=language, \
                 count=100, result_type='recent', include_entities=True) 
         else:
-            print 'list_id', list_id
             cursor = tweepy.Cursor(api.list_timeline, list_id=list_id, \
                 count=100, include_entities=True)
           
@@ -554,10 +560,8 @@ def filter(session_id):
             if x[0] not in filter_urls]
                            
         return _jsonify(
-            query=search_r.get('query', ''),
-            list_id=search_r.get('list_id', ''),
-            language=search_r['language'],
-            stem_map=session_r['stem_map'],
+            search=search_r,
+            session=session_r,
             stem_counts=stem_counts, 
             hashtag_counts=hashtag_counts,
             url_counts=url_counts,
@@ -566,7 +570,27 @@ def filter(session_id):
     except Exception, e:
         traceback.print_exc()
         return _jsonify(error=str(e))
+  
+@app.route("/history/save/<session_id>/", methods=['GET', 'POST'])
+@login_required
+def history_save(session_id):
+    """
+    Mark search session as saved
+    """
+    try:
+        session_r = _session.find_one(
+            {'_id': bson.ObjectId(session_id)})
+        if not session_r:
+            raise Exception('Session not found')
         
+        _session.update({'_id': bson.ObjectId(session_id)}, 
+            {'$set': {'saved': 1}}, multi=False)
+                    
+        return _jsonify(error='')
+    except Exception, e:
+        traceback.print_exc()
+        return _jsonify(error=str(e))
+      
 @app.route("/history/delete/", methods=['GET', 'POST'])
 @login_required
 def history_delete():

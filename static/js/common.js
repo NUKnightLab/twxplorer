@@ -17,6 +17,15 @@ function show_error(error) {
     }
 }
 
+function show_progress(msg) {
+    $('#progress_msg').html(msg);
+    $('#progress_modal').modal('show');
+}
+
+function hide_progress() {
+    $('#progress_modal').modal('hide');
+}
+
 function do_ajax(url, data, on_error, on_success) {
     $.ajax({
         url: url,

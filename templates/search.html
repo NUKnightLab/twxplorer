@@ -3,6 +3,7 @@
 {% block extrahead %}
 <script type="application/javascript" src="http://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/Loader.js" charset="utf-8"></script>
+<script type="application/javascript" src="{{ STATIC_URL }}js/date.js" charset="utf-8"></script>
 <script type="application/javascript" src="{{ STATIC_URL }}js/common.js" charset="utf-8"></script>
 {% endblock %}
 
@@ -18,6 +19,7 @@
 {% endfor %}
             </select>
             <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
+            <button type="button" class="btn" id="save" style="display: none;">Save Results</button>
         </form>
     </div>
     <div id='username' class="span3">
@@ -33,7 +35,9 @@
 {% endif %}
 
 <div class="row-fluid spaced">   
-    <div id="tweet_count" class="span4">
+    <div class="span4">
+        <span id="tweet_count"></span>
+        <span id="timestamp"></span>
     </div>
     <div class="span8 filter-container">
         <ul id="filter_list" class="filter-list">
@@ -85,7 +89,10 @@
 <div class="modal-dialog">
 <div class="modal-content">
     <div class="modal-body">
-        <p><i class="icon-spinner icon-spin"></i> Searching twitter...</p>
+        <p>
+            <i class="icon-spinner icon-spin"></i>
+            <span id="progress_msg">Searching twitter</span>...
+        </p>
     </div>
 </div>
 </div>
@@ -97,8 +104,7 @@
 
 <script type="text/javascript">
 
-var _session_id = '{{ session_id }}';
-var _stem_map = {};
+var _session = {};
 var _url_map = {};
 
 var _filter = [];   // current filter      
@@ -117,15 +123,15 @@ function get_term(s, sep) {
     if(s in _url_map) {
         return _url_map[s];  
     }
-    if(s in _stem_map) {    
-        return _stem_map[s].join(sep || ',');
+    if(s in _session.stem_map) {    
+        return _session.stem_map[s].join(sep || ',');
     }
     return s;
 }
 
 function add_filter(stem) {
     _filter.push(stem);
-    filter_results(_session_id);
+    filter_results(_session._id);
 }
 
 function remove_filter(stem) {
@@ -133,7 +139,7 @@ function remove_filter(stem) {
     if(stem_index > -1) {
         _filter.splice(stem_index, 1);
     }
-    filter_results(_session_id);
+    filter_results(_session._id);
 }
 
 function show_filter() {   
@@ -151,14 +157,21 @@ function show_filter() {
 //
 // Get stats and tweets for session_id using _filter
 //
-function filter_results(session_id, callback) { 
-    _session_id = session_id;
 
+function set_timestamp() {
+    if(_session.saved) {
+        var d = Date.parse(_session.dt.split('.')[0]);
+        var s = d.toString("M/d/yyyy HH:mm:ss");                   
+        $('#timestamp').html('[from '+s+']');
+    }
+}
+
+function filter_results(session_id, callback) { 
     show_filter(); 
     
-    $('#terms, #hashtags, #urls, #tweets, #tweet_count').html('');
+    $('#terms, #hashtags, #urls, #tweets, #tweet_count, #timestamp').html('');
         
-    do_ajax('/filter/'+_session_id+'/', 
+    do_ajax('/filter/'+session_id+'/', 
         {filter: _filter},
         function(err) {
             show_error('Error filtering results ('+err+')');
@@ -166,12 +179,14 @@ function filter_results(session_id, callback) {
                 callback();
             }
         },
-        function(data) {       
-            _stem_map = data.stem_map;
-            
-            $('#query').val(data.query);
-            $('#language').val(data.language);
+        function(data) {   
+            _session = data.session;    
+              
+            $('#query').val(data.search.query);
+            $('#language').val(data.search.language);
             $('#tweet_count').html(data.tweets.length+' tweets');
+            
+            set_timestamp();
                      
             _TermsLoader.set_data(data.stem_counts).load_more();
             _HashtagLoader.set_data(data.hashtag_counts).load_more();
@@ -183,11 +198,6 @@ function filter_results(session_id, callback) {
             }
         }
     );
-}
-
-function load_session(session_id, callback) {
-    _filter = [];
-    filter_results(session_id, callback);  
 }
 
 //
@@ -220,22 +230,45 @@ $(function() {
             return;
         } 
     
-        $('#progress_modal').modal('show');
+        show_progress('Searching Twitter');
     
         do_ajax("{{ url_for('analyze') }}", 
             {language: $('#language').val(), query: query},
             function(error) {
                 show_error('Error executing search ('+error+')');
-                $('#progress_modal').modal('hide');
+                hide_progress();
             },
             function(data) {   
-                load_session(data.session._id, function() {
-                    $('#progress_modal').modal('hide');
+                _filter = [];
+                filter_results(data.session._id, function() {
+                    hide_progress();
                 });
+                
+                $('#save').show();
             }
         );
     });
-    
+ 
+    $('#save').click(function(event) {
+        clear_error();
+        
+        show_progress('Saving results');
+        
+        do_ajax('/history/save/'+_session._id+'/', 
+            {},
+            function(error) {
+                show_error('Error saving results ('+error+')');
+                hide_progress();
+             },
+            function(data) {  
+                _session.saved = 1; 
+                set_timestamp();
+                hide_progress();
+                $('#save').hide();
+            }
+        );
+    });
+       
     //
     // Loaders
     //
@@ -343,9 +376,10 @@ $(function() {
     //
     // LOAD SESSION?
     //
-    if(_session_id) {
-        load_session(_session_id);
-    }    
+{% if session_id %}
+    filter_results('{{ session_id }}');
+{% endif %}
+
 });
 
 </script>

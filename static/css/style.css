@@ -13,10 +13,10 @@
 /*
 CONTROL BAR AREA
 */
-#query {width: 350px;}
-#language {width: 140px;}
-
-#list {width: 450px;}
+#control_bar button {font-size: 0.9em;}
+#query {font-size: 0.9em;width: 340px;}
+#list {font-size: 0.9em;width: 340px;}
+#language {font-size: 0.9em;width: 130px;}
 
 /* 
 FILTERS
@@ -43,6 +43,7 @@ FILTERS
 #username {font-weight: bold;font-size: 0.8em;text-align: right;}
 
 #tweet_count {font-style: italic;font-size: 0.8em;text-align: left;}
+#timestamp {font-size: 0.8em;text-align: right;margin-left: 4px;font-weight: bold;}
 
 #terms {height: 360px;overflow: auto;font-size: 0.9em;}
 #terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer;}
