@@ -1,20 +1,12 @@
 // utility.js
 //
 
-function clear_error() {
-    $('#error_alert').remove();
-}
-
-function show_error(error) {  
-    if($('#error_alert').length) {
-        $('#error_alert .error-msg').html(error);
-    } else {        
-        $('#control_bar').after(
-            '<div id="error_alert" class="alert alert-danger">'
-            + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
-            + '<span class="error-msg">'+error + '</span></div>'
-        );
-    }
+//
+// Initialize common modals in base template
+//
+function init_modals() {
+    $('#progress_modal').modal({keyboard: false, show: false})
+    $('#confirm_modal').modal({keyboard: false, show: false});
 }
 
 function show_progress(msg) {
@@ -24,6 +16,32 @@ function show_progress(msg) {
 
 function hide_progress() {
     $('#progress_modal').modal('hide');
+}
+
+function show_confirm(msg, callback) {
+    $('#confirm_msg').html(msg);
+    $('#confirm_modal .btn-primary').bind('click.confirm', function(event) {
+        $(this).unbind('click.confirm');
+        $('#confirm_modal').modal('hide');
+        callback();
+    });
+    $('#confirm_modal').modal('show');
+}
+
+function show_error(error) {      
+    if($('#error_alert').length) {
+        $('#error_alert .error-msg').html(error);
+    } else {        
+        $('#control_bar').after(
+            '<div id="error_alert" class="alert alert-danger">'
+            + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
+            + '<span class="error-msg">'+error+'</span></div>'
+        );
+    }
+}
+
+function hide_error() {
+    $('#error_alert').remove();
 }
 
 function do_ajax(url, data, on_error, on_success) {

@@ -1,8 +1,19 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+<script type="application/javascript" src="{{ STATIC_URL }}js/common.js" charset="utf-8"></script>
+{% endblock %}
+
 {% block content %}
 
-<h4 id="page_header">History</h4>
+<div id='control_bar' class="row-fluid">
+    <div class="span9">
+        <h4 id="page_header">History</h4>
+    </div>
+    <div id='username' class="span3">
+    Logged in as @{{ session.username }}
+    </div>
+</div>
 
 {% if error %}
 <div class="alert alert-danger">
@@ -53,7 +64,7 @@
 {% if searches|length %}
 <div class="row-fluid">
     <div class="span12">
-    <button id="history_delete" class="btn btn-danger" onclick="delete_selected_history();">Delete Selected Searches</button>
+    <button id="history_delete" class="btn btn-danger" onclick="delete_selected_history();">Delete Selected Results</button>
     </div>
 </div>
 {% endif %}
@@ -61,10 +72,11 @@
 {% endblock %}
 
 {% block script %}
-
 <script type="text/javascript">
 
 function delete_selected_history() {
+    hide_error();
+    
     var searches = [];
     var sessions = [];
 
@@ -77,25 +89,28 @@ function delete_selected_history() {
     });
 
     if(!(searches.length || sessions.length)) {
-        alert('No searches selected');
-    } else if(confirm("Delete selected search results?")) {
-        do_ajax("{{ url_for('history_delete') }}",
-            {searches: searches, sessions: sessions},
-            function(err) {
-                show_error('Error deleting searches ('+err+')');
-            },
-            function(data) {
-                document.location.href = "{{ url_for('history') }}";
-            }
-        );            
+        show_error('No results selected');
+    } else {
+        show_confirm('Deleted selected results?', function(event) {
+            show_progress('Deleting results');
+            
+             do_ajax("{{ url_for('history_delete') }}",
+                {searches: searches, sessions: sessions},
+                function(err) {
+                    show_error('Error deleting searches ('+err+')');
+                    hide_progress();
+                },
+                function(data) {
+                    document.location.href = "{{ url_for('history') }}";
+                }
+            );            
+        });
     }
 }
 
 $(function() {
-
-    // noop
+    init_modals();
 });
 
 </script>
-
 {% endblock %}

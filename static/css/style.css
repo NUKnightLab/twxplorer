@@ -18,6 +18,11 @@ CONTROL BAR AREA
 #list {font-size: 0.9em;width: 340px;}
 #language {font-size: 0.9em;width: 130px;}
 
+/*
+ALERTS/MODALS
+*/
+#progress_modal .icon-spinner {margin-right: 6px;}
+
 /* 
 FILTERS
 */

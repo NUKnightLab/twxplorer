@@ -70,8 +70,24 @@
   <div id="content" class="container">
 {% block content %}
 
-
 {% endblock %}
+  <!-- START MODALS -->
+  <div id="progress_modal" class="modal hide fade" role="dialog" aria-hidden="true">
+    <div class="modal-body">
+      <p><i class="icon-spinner icon-spin"></i><span id="progress_msg"></span>...</p>
+    </div>
+  </div>
+ 
+  <div id="confirm_modal" class="modal hide fade" role="dialog" aria-hidden="true">
+    <div class="modal-body">
+      <p id="confirm_msg"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+      <button class="btn btn-primary">Delete</button>
+    </div>
+  </div>
+  <!-- END MODALS -->
   </div>
   <!-- END CONTENT-->
 

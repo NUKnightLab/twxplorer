@@ -8,7 +8,6 @@
 {% endblock %}
 
 {% block content %}
-
 <div id='control_bar' class="row-fluid">
     <div class="span9">
         <form class="form-inline">
@@ -84,24 +83,9 @@
         </div>
     </div>    
 </div>
-
-<div id="progress_modal" class="modal fade">
-<div class="modal-dialog">
-<div class="modal-content">
-    <div class="modal-body">
-        <p>
-            <i class="icon-spinner icon-spin"></i>
-            <span id="progress_msg">Searching twitter</span>...
-        </p>
-    </div>
-</div>
-</div>
-</div>
-
 {% endblock %}
 
 {% block script %}
-
 <script type="text/javascript">
 
 var _session = {};
@@ -204,7 +188,6 @@ function filter_results(session_id, callback) {
 // on load
 //
 $(function() {
-    $('#progress_modal').modal({keyboard: false, show: false})
     
     $('#query')
         .keypress(function(event) {
@@ -222,7 +205,7 @@ $(function() {
     }
        
     $('#search').click(function(event) {
-        clear_error();
+        hide_error();
         
         var query = $('#query').val().trim();
         if(!query) {
@@ -250,7 +233,7 @@ $(function() {
     });
  
     $('#save').click(function(event) {
-        clear_error();
+        hide_error();
         
         show_progress('Saving results');
         
@@ -383,5 +366,4 @@ $(function() {
 });
 
 </script>
-
 {% endblock %}
