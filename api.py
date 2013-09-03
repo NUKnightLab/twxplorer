@@ -182,7 +182,13 @@ def logout():
 #
 # Main views
 #
-    
+@app.route("/about/", methods=['GET', 'POST'])
+def about(name=''):
+    """
+    About page
+    """
+    return render_template('about.html')
+
 @app.route("/", methods=['GET', 'POST'])
 def index(name=''):
     """
