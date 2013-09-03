@@ -27,8 +27,8 @@ ALERTS/MODALS
 /* 
 FILTERS
 */
-.filter-container {padding: 0;}
-.filter-list {margin: 0;padding: 0;min-height: 28px;}
+.filter-container {padding: 0;float: right;}
+.filter-list {margin: -3px 0 0 6px;padding: 0;min-height: 28px;}
 
 .filter-list li {
     float: left;
@@ -44,7 +44,7 @@ FILTERS
 }
 
 .filter-list li .close {margin-left: 4px;}
-.filter-container a {padding-left: 6px;cursor: pointer;}
+.filter-container a {padding-left: 6px;cursor: pointer;float: right;}
 
 #username {font-weight: bold;font-size: 0.8em;text-align: right; white-space: nowrap;}
 #username a{padding-left: 10px;}

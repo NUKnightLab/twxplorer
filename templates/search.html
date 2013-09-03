@@ -34,13 +34,16 @@
 {% endif %}
 
 <div class="row-fluid spaced">   
-    <div class="span4">
-        <span id="tweet_count"></span>
-        <span id="timestamp"></span>
-    </div>
-    <div class="span8 filter-container">
-        <ul id="filter_list" class="filter-list">
-        </ul>
+    <div class="span12">
+        <ul class="inline breadcrumbs">
+            <li>Search ></li>
+            <li>searchterm @ <span id="timestamp">timestamp</span> 
+                <div class="filter-container">
+                    <ul id="filter_list" class="filter-list"></ul>
+                </div>
+            </li>
+            <li><span id="tweet_count"></span></li>
+        
     </div>
 </div>
 
@@ -168,7 +171,7 @@ function filter_results(session_id, callback) {
               
             $('#query').val(data.search.query);
             $('#language').val(data.search.language);
-            $('#tweet_count').html(data.tweets.length+' tweets');
+            $('#tweet_count').html('('+data.tweets.length+' tweets)');
             
             set_timestamp();
                      
