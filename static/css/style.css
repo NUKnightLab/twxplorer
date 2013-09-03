@@ -9,7 +9,9 @@
 .spaced {margin-bottom: 14px;}
 .loading {margin: 8px 0;text-align: center;}
 .msg {color: #666;margin: 8px 0;text-align: center;}
-
+#content {
+    min-height: 500px;
+}
 /*
 CONTROL BAR AREA
 */

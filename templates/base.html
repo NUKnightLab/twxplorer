@@ -53,12 +53,18 @@
             <li><a href="{{ url_for('search') }}">Search</a></li>           
             <li><a href="{{ url_for('lists') }}">Lists</a></li>           
             <li><a href="{{ url_for('history') }}">History</a></li>           
-            <li><a href="{{ url_for('logout') }}">Logout</a></li>           
             {% endif %}
           </ul>
           <ul class="nav pull-right">
             <li class="knightlab-tab"><a data-toggle="preheader" href="http://knightlab.northwestern.edu" title="Northwesten University Knight Lab"><span>Northwestern University Knight Lab</span></a></li>
             <!--for local testing add: data-target="/source/preheader.html" -->
+          </ul>
+          <ul class="nav pull-right">
+            <li><a href="{{ url_for('about') }}">About</a></li>           
+
+            {% if session.username %}        
+            <li class="pullright"><a href="{{ url_for('logout') }}">Logout</a></li>           
+            {% endif %}
           </ul>
         </div><!-- /.nav-collapse -->
       </div>
