@@ -61,10 +61,6 @@
           </ul>
           <ul class="nav pull-right">
             <li><a href="{{ url_for('about') }}">About</a></li>           
-
-            {% if session.username %}        
-            <li class="pullright"><a href="{{ url_for('logout') }}">Logout</a></li>           
-            {% endif %}
           </ul>
         </div><!-- /.nav-collapse -->
       </div>

@@ -19,7 +19,6 @@ CONTROL BAR AREA
 #query {font-size: 0.9em;width: 340px;}
 #list {font-size: 0.9em;width: 340px;}
 #language {font-size: 0.9em;width: 130px;}
-
 /*
 ALERTS/MODALS
 */
@@ -47,7 +46,8 @@ FILTERS
 .filter-list li .close {margin-left: 4px;}
 .filter-container a {padding-left: 6px;cursor: pointer;}
 
-#username {font-weight: bold;font-size: 0.8em;text-align: right;}
+#username {font-weight: bold;font-size: 0.8em;text-align: right; white-space: nowrap;}
+#username a{padding-left: 10px;}
 
 #tweet_count {font-style: italic;font-size: 0.8em;text-align: left;}
 #timestamp {font-size: 0.8em;text-align: right;margin-left: 4px;font-weight: bold;}

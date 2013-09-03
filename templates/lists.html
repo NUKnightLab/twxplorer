@@ -26,7 +26,7 @@
         </form>
     </div>
     <div id='username' class="span3">
-    Logged in as @{{ session.username }}
+        Logged in as @{{ session.username }} <a href="{{ url_for('logout') }}">logout</a>
     </div>
 </div>
 
