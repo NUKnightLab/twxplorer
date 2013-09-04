@@ -16,8 +16,19 @@ Install [MongoDB](http://www.mongodb.org/downloads) and start the Mongo server b
     # Change into the twxplorer repository
     cd twxplorer
     
+    # Activate the virtual environment (if necessary)
+    workon twxplorer
+    
     # Install requirements
     pip install -r requirements.txt
+    
+    # Download nltk stopwords (if necessary)
+    # The commands below will open up the NLTK Downloader application.
+    # On the 'Corpora' tab, select 'stopwords' and click 'Download'.
+    # When finished, quit the application.
+    python
+    >> import nltk
+    >> nltk.download()
     
     # Start the Flask development server
     python api.py
