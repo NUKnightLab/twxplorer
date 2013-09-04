@@ -57,7 +57,17 @@ FILTERS
 #terms .inner {margin: 0 40px 0 0;}
 #terms label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
 #terms .bar {background: #e35a25;height: 0.5em;}
-#terms .count {font-size: 0.9em;float: right;font-size: 0.9em;}
+#terms .count {
+    background-color: #EEEEEE;
+    border-radius: 2px 2px 2px 2px;
+    color: #666666;
+    float: left;
+    font-size: 1.2em;
+    margin: 2px 4px 0 0;
+    min-width: 22px;
+    padding: 5px 5px 3px 6px;
+    text-align: right;
+}
 
 #hashtags {height: 360px;overflow: auto;font-size: 0.9em;}
 
