@@ -1,7 +1,29 @@
+{# Output display text for endpoint #}
+{% macro navtext(endpoint) -%}
+    {%- if endpoint == 'search' -%}
+        Search
+    {%- elif endpoint == 'lists' -%}
+        Lists
+    {%- elif endpoint == 'history' -%}
+        History
+    {%- elif endpoint == 'about' -%}
+        About
+    {% endif %}
+{%- endmacro %}
+
+{# Output navigation item for endpoint #}
+{% macro navitem(endpoint) -%}
+    {%- if request.endpoint == endpoint -%}
+    <li class="active"><a href="{{ url_for(endpoint) }}">{{ navtext(endpoint) }}</a></li>
+    {% else %}
+    <li><a href="{{ url_for(endpoint) }}">{{ navtext(endpoint) }}</a></li>
+    {% endif %}
+{%- endmacro %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>twXplorer</title>
+  <title>twXplorer{% set s = navtext(request.endpoint) %}{% if s %}: {{ s }}{% endif %}</title>
   <!-- IE -->
   <link rel="shortcut icon" type="image/x-icon" href="http://blueline.knightlab.com/assets/logos/favicon.ico" /> 
   <!-- other browsers -->
@@ -37,7 +59,6 @@
 <body>
 
   <!-- BEGIN HEADER -->
-
   <div class="navbar navbar-fixed-top navbar-inverse">
     <div class="navbar-inner">
       <div class="container-fluid">
@@ -50,9 +71,9 @@
         <div class="nav-collapse navbar-responsive-collapse collapse" style="height: 0px;">
          <ul class="nav">
             {% if session.username %}
-            <li class="active"><a href="{{ url_for('search') }}">Search</a></li>
-            <li><a href="{{ url_for('lists') }}">Lists</a></li>
-            <li><a href="{{ url_for('history') }}">History</a></li>           
+            {{ navitem('search') }}
+            {{ navitem('lists') }}
+            {{ navitem('history') }}
             {% endif %}
           </ul>
           <ul class="nav pull-right">
@@ -60,7 +81,7 @@
             <!--for local testing add: data-target="/source/preheader.html" -->
           </ul>
           <ul class="nav pull-right">
-            <li><a href="{{ url_for('about') }}">About</a></li>           
+            {{ navitem('about') }}
           </ul>
         </div><!-- /.nav-collapse -->
       </div>
