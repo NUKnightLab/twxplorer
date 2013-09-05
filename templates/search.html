@@ -11,7 +11,7 @@
 <div id='control_bar' class="row-fluid">
     <div class="span9">
         <form class="form-inline">
-            <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter your search query" />
+            <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter a search term" />
             <select id="language">
 {% for item in languages %}
                 <option value='{{ item.1 }}'>{{ item.0|capitalize }}</option>
@@ -65,14 +65,18 @@
         <div class="row-fluid spaced">   
             <div class="span7 frame">
                 <div class="frame-header">Terms</div>
-                <div id='terms' class="frame-body">
-                    <!-- terms go here --> 
+                <div class="frame-body">
+                    <ul id='terms' class="unstyled">
+                        <!-- terms go here -->
+                    </ul>
                 </div>
             </div>
             <div class="span5 frame">
                 <div class="frame-header">Hashtags</div>
-                <div id="hashtags" class="frame-body">
-                    <!-- hashtags go here -->
+                <div class="frame-body">
+                   <ul id="hashtags" class="unstyled">
+                     <!-- hashtags go here -->
+                   </ul>
                 </div>   
             </div>
         </div>
@@ -269,13 +273,13 @@ $(function() {
                 var pct = (count * 100)/max_count;
             
                 html += ''
-                    + '<div class="term" onclick="add_filter(\''+stem+'\');">'
+                    + '<li class="term" onclick="add_filter(\''+stem+'\');">'
                     + '<span class="count">'+count+'</span>'
                     + '<div class="inner">'
                     + '<a>'+get_term(stem, ', ')+'</a>'
                     + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
                     + '</div>'
-                    + '</div>';     
+                    + '</li>';     
             }            
             callback(html);       
         }
@@ -291,8 +295,8 @@ $(function() {
                     count = hashtag_counts[i][1];
             
                     html += ''
-                        + '<p><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
-                        + hashtag+'</a> ('+count+')</p>';
+                        + '<li><span class="count">'+count+'</span><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
+                        + hashtag+'</a></li>';
                 }  
             } else {
                 html = '<p class="msg">no hashtags found</p>';
