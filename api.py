@@ -182,89 +182,10 @@ def logout():
 #
 # Main views
 #
-@app.route("/about/", methods=['GET', 'POST'])
-def about(name=''):
-    """
-    About page
-    """
-    return render_template('about.html')
-
-@app.route("/", methods=['GET', 'POST'])
-def index(name=''):
-    """
-    Main page
-    """    
-    try:
-        return render_template('index.html')
-    except Exception, e:
-        traceback.print_exc()
-        return render_template('index.html', error=str(e))
-        
-@app.route("/search/", methods=['GET', 'POST'])
-@app.route("/search/<session_id>/", methods=['GET', 'POST'])
-@login_required
-def search(session_id=''):
-    """
-    Search by query page
-    """
-    return render_template('search.html', session_id=session_id,
-        languages=extract.stopword_languages)
-       
-@app.route("/lists/", methods=['GET', 'POST'])
-@app.route("/lists/<session_id>/", methods=['GET', 'POST'])
-@login_required
-def lists(session_id=''):
-    """
-    Search by list page
-    """
-    try:
-        username = session.get('username')
-        delta = datetime.timedelta(minutes=15)
-        refresh = False
-        
-        list_r = _list.find_one({'username': username})
-        if not list_r:
-            refresh = True
-        elif (list_r['dt'] + delta) < datetime.datetime.now():
-            refresh = True
-        
-        if refresh:
-            api = tweepy.API(get_oauth())
-
-            lists = []
-            for r in api.lists_all(screen_name=username):
-                lists.append({
-                    'id_str': r.id_str,
-                    'slug': r.slug,
-                    'name': r.name,
-                    'full_name': r.full_name
-                })
-            
-            list_r = {
-                'username': username, 
-                'dt': datetime.datetime.now(),
-                'lists': lists
-            }          
-            list_r['_id'] = _list.save(list_r, manipulate=True)
-    
-        if not list_r['lists']:
-            raise Exception('You are not subscribed to any lists.')
-            
-        return render_template('lists.html', session_id=session_id,
-            languages=extract.stopword_languages, lists=list_r['lists'])
-    except tweepy.TweepError, e:
-        traceback.print_exc()
-        return render_template('lists.html', session_id=session_id,
-            languages=extract.stopword_languages, error=str(e))
-    except Exception, e:
-        traceback.print_exc()
-        return render_template('lists.html', session_id=session_id,
-            languages=extract.stopword_languages, error=str(e))
-
 
 def _get_saved_results(params=None):
     """
-    Get saved results matching params, grouped by search->session
+    Get saved results matching params, grouped by search
     """
     search_by_query = []
     search_by_list = []
@@ -309,6 +230,95 @@ def _get_saved_results(params=None):
     return (search_by_query, search_by_list)
     
     
+@app.route("/about/", methods=['GET', 'POST'])
+def about(name=''):
+    """
+    About page
+    """
+    return render_template('about.html')
+
+@app.route("/", methods=['GET', 'POST'])
+def index(name=''):
+    """
+    Main page
+    """    
+    try:
+        return render_template('index.html')
+    except Exception, e:
+        traceback.print_exc()
+        return render_template('index.html', error=str(e))
+        
+@app.route("/search/", methods=['GET', 'POST'])
+@app.route("/search/<session_id>/", methods=['GET', 'POST'])
+@login_required
+def search(session_id=''):
+    """
+    Search by query page
+    """
+    try:
+        saved_results, unused = _get_saved_results({'list_id': {'$exists': False}})
+
+        return render_template('search.html', session_id=session_id,
+            languages=extract.stopword_languages, saved_results=saved_results)
+    except Exception, e:
+        traceback.print_exc()
+        return render_template('search.html', session_id=session_id,
+            languages=extract.stopword_languages, error=str(e))
+    
+       
+@app.route("/lists/", methods=['GET', 'POST'])
+@app.route("/lists/<session_id>/", methods=['GET', 'POST'])
+@login_required
+def lists(session_id=''):
+    """
+    Search by list page
+    """
+    try:
+        unused, saved_results = _get_saved_results({'list_id': {'$exists': True}})        
+
+        username = session.get('username')
+        delta = datetime.timedelta(minutes=15)
+        refresh = False
+        
+        list_r = _list.find_one({'username': username})
+        if not list_r:
+            list_r = {'username': username}
+            refresh = True
+        elif (list_r['dt'] + delta) < datetime.datetime.now():
+            refresh = True
+        
+        if refresh:
+            api = tweepy.API(get_oauth())
+
+            lists = []
+            for r in api.lists_all(screen_name=username):
+                lists.append({
+                    'id_str': r.id_str,
+                    'slug': r.slug,
+                    'name': r.name,
+                    'full_name': r.full_name
+                })
+            
+            list_r['dt'] = datetime.datetime.now()
+            list_r['lists'] = lists       
+            list_r['_id'] = _list.save(list_r, manipulate=True)
+    
+        if not list_r['lists']:
+            raise Exception('You are not subscribed to any lists.')
+            
+        return render_template('lists.html', session_id=session_id,
+            languages=extract.stopword_languages, saved_results=saved_results,
+            lists=list_r['lists'])
+    except tweepy.TweepError, e:
+        traceback.print_exc()
+        return render_template('lists.html', session_id=session_id,
+            languages=extract.stopword_languages, error=str(e))
+    except Exception, e:
+        traceback.print_exc()
+        return render_template('lists.html', session_id=session_id,
+            languages=extract.stopword_languages, error=str(e))
+
+    
 @app.route("/history/", methods=['GET', 'POST'])
 @login_required
 def history():
@@ -317,47 +327,6 @@ def history():
     """
     try:
         searches, lists = _get_saved_results()
-        
-        return render_template('history.html', 
-            searches=searches, lists=lists)
-        
-        searches = []
-        lists = []
-        
-        list_r = _list.find_one({'username': session['username']})
-        list_map = {}
-        if list_r:
-            for r in list_r['lists']:
-                list_map[r['id_str']] = r['full_name']
-        
-        search_cursor = _search.find(
-            {'username': session['username']},
-            sort=[('query', pymongo.ASCENDING)]
-        )
-        for search_r in search_cursor:
-            search_r['_id'] = str(search_r['_id'])
-            
-            if 'list_id' in search_r:
-                search_r['full_name'] = list_map.get(search_r['list_id']) \
-                    or '[unknown]'
-            search_r['sessions'] = []
-           
-            session_cursor = _session.find(
-                {'search_id': search_r['_id'], 'saved': 1},
-                fields=['_id', 'dt'],
-                sort=[('dt', pymongo.DESCENDING)]
-            )
-            for session_r in session_cursor:
-                session_r['_id'] = str(session_r['_id'])
-                session_r['dt'] = datetime.datetime \
-                    .strptime(session_r['dt'], '%Y-%m-%dT%H:%M:%S.%f') \
-                    .strftime('%b %d %Y %H:%M:%S')
-                    
-                search_r['sessions'].append(session_r)
-                
-            if search_r['sessions']:
-                searches.append(search_r)
-                        
         return render_template('history.html', 
             searches=searches, lists=lists)
     except Exception, e:

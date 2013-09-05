@@ -26,6 +26,16 @@
     </div>
 </div>
 
+<!-- START SAMPLE CODE FOR HOW TO ITERATE THROUGH SAVED RESULTS -->
+{% for r in saved_results %}
+    <p>{{ r.query }}: 
+    {% for sess in r.sessions %}
+        {{ sess.dt }},
+    {% endfor %}
+    <p>
+{% endfor %}
+<!-- END SAMPLE CODE -->
+
 {% if error %}
 <div class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times;</button>
