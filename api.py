@@ -260,8 +260,55 @@ def lists(session_id=''):
         traceback.print_exc()
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, error=str(e))
-        
 
+
+def _get_saved_results(params=None):
+    """
+    Get saved results matching params, grouped by search->session
+    """
+    search_by_query = []
+    search_by_list = []
+    
+    list_r = _list.find_one({'username': session['username']})
+    list_map = {}
+    if list_r:
+        for r in list_r['lists']:
+            list_map[r['id_str']] = r['full_name']
+    
+    search_q = {'username': session['username']}
+    search_q.update(params or {})
+    
+    search_cursor = _search.find(search_q, sort=[('query', pymongo.ASCENDING)])
+    for search_r in search_cursor:
+        search_r['_id'] = str(search_r['_id'])
+        search_r['sessions'] = []
+        
+        if 'list_id' in search_r:
+            search_r['full_name'] = list_map.get(search_r['list_id']) \
+                or '[unknown]'
+                
+        session_cursor = _session.find(
+            {'search_id': search_r['_id'], 'saved': 1},
+            fields=['_id', 'dt'],
+            sort=[('dt', pymongo.DESCENDING)]
+        )
+        for session_r in session_cursor:
+            session_r['_id'] = str(session_r['_id'])
+            session_r['dt'] = datetime.datetime \
+                .strptime(session_r['dt'], '%Y-%m-%dT%H:%M:%S.%f') \
+                .strftime('%b %d %Y %H:%M:%S')
+                                
+            search_r['sessions'].append(session_r)
+            
+        if search_r['sessions']:
+            if 'list_id' in search_r:
+                search_by_list.append(search_r)
+            else:
+                search_by_query.append(search_r)
+   
+    return (search_by_query, search_by_list)
+    
+    
 @app.route("/history/", methods=['GET', 'POST'])
 @login_required
 def history():
@@ -269,6 +316,11 @@ def history():
     Get search history, grouped by search -> session
     """
     try:
+        searches, lists = _get_saved_results()
+        
+        return render_template('history.html', 
+            searches=searches, lists=lists)
+        
         searches = []
         lists = []
         

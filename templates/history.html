@@ -22,28 +22,27 @@
 </div>
 {% endif %}
 
-<div class="row-fluid">
-    <div class="span12">
-{% if searches|length %}
-        <div class="accordion" id="history_accordion">
-    {% for search in searches %}
+{# Output accordion for saved results #}
+{% macro history_accordion(id, group_list) -%}
+    <div class="accordion" id="{{ id }}">
+    {% for group in group_list %}
         <div class="accordion-group">
              <div class="accordion-heading">
-                <input type="checkbox" class="search" value="{{ search._id }}" />
-                <a class="accordion-toggle collapsed" data-toggle="collapse" data-parent="#history_accordion" href="#collapse_{{ search._id }}">
-        {% if search.query %}
-                    {{ search.query }} ({{ search.language }})   
+                <input type="checkbox" class="search" value="{{ group._id }}" />
+                <a class="accordion-toggle collapsed" data-toggle="collapse" data-parent="#{{ id }}" href="#collapse_{{ group._id }}">
+        {% if group.query %}
+                    {{ group.query }} ({{ group.language }})   
         {% else %}
-                    {{ search.full_name }} ({{ search.language }})
+                    {{ group.full_name }} ({{ group.language }})
         {% endif %}
                 </a>
             </div>
-            <div id="collapse_{{ search._id }}" class="accordion-body collapse">
+            <div id="collapse_{{ group._id }}" class="accordion-body collapse">
                 <div class="accordion-inner">
-        {% for sess in search.sessions %}    
+        {% for sess in group.sessions %}    
                     <div class="accordion-row">       
                         <input type="checkbox" class="session" value="{{ sess._id }}" />
-            {% if search.query %}
+            {% if group.query %}
                         <p><a href='/search/{{ sess._id }}/'>{{ sess.dt }}</a></p>
             {% else %}
                         <p><a href='/lists/{{ sess._id }}/'>{{ sess.dt }}</a></p>
@@ -54,14 +53,30 @@
             </div>
         </div>
     {% endfor %}
-        </div>
+    </div>
+{%- endmacro %}
+
+<div class="row-fluid">
+    <div class="span6">
+    <h5>Searches</h5>
+{% if searches|length %}
+    {{ history_accordion('search_accordion', searches) }}
 {% else %}
         <p>No saved searches found.</p>
 {% endif %}
     </div>
+
+    <div class="span6">
+    <h5>Lists</h5>
+{% if lists|length %}
+    {{ history_accordion('list_accordion', lists) }}
+{% else %}
+    <p>No saved results for lists.</p>
+{% endif %}
+    </div>
 </div>
 
-{% if searches|length %}
+{% if searches|length or lists|length %}
 <div class="row-fluid">
     <div class="span12">
     <button id="history_delete" class="btn btn-danger" onclick="delete_selected_history();">Delete Selected Results</button>
