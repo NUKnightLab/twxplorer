@@ -30,6 +30,17 @@
     </div>
 </div>
 
+<!-- START SAMPLE CODE FOR HOW TO ITERATE THROUGH SAVED RESULTS -->
+{% for r in saved_results %}
+    <p>{{ r.full_name }}: 
+    {% for sess in r.sessions %}
+        {{ sess.dt }},
+    {% endfor %}
+    <p>
+{% endfor %}
+<!-- END SAMPLE CODE -->
+
+
 {% if error %}
 <div class="alert alert-danger">
     <button type="button" class="close" data-dismiss="alert">&times;</button>
@@ -104,15 +115,18 @@ var _UrlsLoader;
 
 
 // Get the term to represent filter item in UI
-function get_term(s, sep) {
+function get_term(s) {
     if(s[0] == '#') {
         return s;
     }   
     if(s in _url_map) {
         return _url_map[s];  
     }
-    if(s in _session.stem_map) {    
-        return _session.stem_map[s].join(sep || ',');
+    if(s in _session.stem_map) { 
+        if(_session.stem_map[s].length > 1) {
+            return _session.stem_map[s][0]+', ...';
+        } 
+        return _session.stem_map[s];
     }
     return s;
 }
@@ -172,7 +186,7 @@ function filter_results(session_id, callback) {
             
             $('#list').val(data.search.list_id);
             $('#language').val(data.search.language);
-            $('#tweet_count').html(data.tweets.length+' tweets');
+            $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
             
             set_timestamp();
                      
@@ -261,16 +275,26 @@ $(function() {
                 var count = stem_counts[i][1];
                 var pct = (count * 100)/max_count;
             
+                term_list = _session.stem_map[stem];
+                if(term_list.length > 1) {                
+                    anchor = '<a data-toggle="tooltip" data-placement="right" data-title="'+term_list.join(', ')+'" data-trigger="hover">';
+                } else {
+                    anchor = '<a>';
+                }
+                
                 html += ''
                     + '<div class="term" onclick="add_filter(\''+stem+'\');">'
                     + '<span class="count">'+count+'</span>'
                     + '<div class="inner">'
-                    + '<a>'+get_term(stem, ', ')+'</a>'
+                    + anchor+get_term(stem, ', ')+'</a>'
                     + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
                     + '</div>'
                     + '</div>';     
             }            
             callback(html);       
+        },
+        function(count) {
+            $('#terms a[data-toggle="tooltip"]').slice(-count).tooltip();        
         }
     );
  
