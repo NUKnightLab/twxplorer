@@ -164,7 +164,7 @@ def auth_verify():
     except:
         session['language'] = 'en'
 
-    return redirect(url_for('index'))  
+    return redirect(url_for('search'))  
 
 
 @app.route('/logout/')
@@ -195,9 +195,6 @@ def index(name=''):
     Main page
     """    
     try:
-        if is_logged_in():
-            return redirect(url_for('search'))
-            
         return render_template('index.html')
     except Exception, e:
         traceback.print_exc()
