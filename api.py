@@ -531,7 +531,8 @@ def filter(session_id):
         hashtag_counter = Counter()
         url_counter = Counter()
         
-        tweets = []           
+        tweets = []   
+        retweets = 0        
         id_set = set()
         
         for tweet in cursor:  
@@ -540,12 +541,14 @@ def filter(session_id):
             url_counter.update(tweet['urls'])
             
             if tweet['id_str'] in id_set:
+                retweets += 1
                 continue
             id_set.add(tweet['id_str'])
           
             if 'retweeted_status' in tweet:
                 retweeted_id = tweet['retweeted_status']['id_str']
                 if retweeted_id in id_set:
+                    retweets += 1
                     continue              
                 id_set.add(retweeted_id)
                     
@@ -570,7 +573,8 @@ def filter(session_id):
             stem_counts=stem_counts, 
             hashtag_counts=hashtag_counts,
             url_counts=url_counts,
-            tweets=tweets
+            tweets=tweets,
+            retweets=retweets
         )
     except Exception, e:
         traceback.print_exc()

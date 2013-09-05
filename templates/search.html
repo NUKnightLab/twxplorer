@@ -171,7 +171,7 @@ function filter_results(session_id, callback) {
               
             $('#query').val(data.search.query);
             $('#language').val(data.search.language);
-            $('#tweet_count').html('('+data.tweets.length+' tweets)');
+            $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
             
             set_timestamp();
                      
