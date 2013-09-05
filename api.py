@@ -246,18 +246,20 @@ def lists(session_id=''):
                 'lists': lists
             }          
             list_r['_id'] = _list.save(list_r, manipulate=True)
-
+    
+        if not list_r['lists']:
+            raise Exception('You are not subscribed to any lists.')
+            
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, lists=list_r['lists'])
     except tweepy.TweepError, e:
         traceback.print_exc()
-        if not list_r:
-            raise Exception(e.message[0]['message'])
         return render_template('lists.html', session_id=session_id,
-            languages=extract.stopword_languages, lists=list_r['lists'])
+            languages=extract.stopword_languages, error=str(e))
     except Exception, e:
         traceback.print_exc()
-        return render_template('lists.html', error=str(e))
+        return render_template('lists.html', session_id=session_id,
+            languages=extract.stopword_languages, error=str(e))
         
 
 @app.route("/history/", methods=['GET', 'POST'])
