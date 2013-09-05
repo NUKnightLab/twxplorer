@@ -15,7 +15,7 @@ function Loader(target, page_size, format_callback, post_load_callback) {
     this.target = target;
     this.page_size = page_size;
     this.format_callback = format_callback;
-    this.post_load_callback = post_load_callback || function() {};   
+    this.post_load_callback = post_load_callback || function(count) {};   
  }
 
 Loader.prototype.set_data = function(data) {     
@@ -55,15 +55,18 @@ Loader.prototype.load_more = function() {
     var _self = this; 
     this.target.unbind('scroll.loader');
 
-    var max_index = Math.min(this.next_index+this.page_size, this.data.length);
+    var start_index = this.next_index;
+    var max_index = Math.min(start_index+this.page_size, this.data.length);
+    var count = max_index - start_index;
     
     this.format_callback(
         this.data.slice(this.next_index, max_index),
         function(html) {
             _self.next_index = max_index;           
             _self.set_html(html);
-            _self.post_load_callback();
-        }
+            _self.post_load_callback(count);
+        },
+        this.next_index
     );
 };
     
