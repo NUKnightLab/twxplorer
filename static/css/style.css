@@ -61,19 +61,23 @@ FILTERS
 #timestamp {font-size: 0.8em;text-align: right;margin-left: 4px;font-weight: bold;}
 
 #terms {height: 360px;overflow: auto;font-size: 0.9em;}
-#terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer;}
-#terms .inner {margin: 0 40px 0 0;}
+#terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer; clear: both;}
+#terms .inner {margin: 0 0 0 50px;padding:6px 0 0 0px;}
+#terms .inner a {text-shadow:0px 0px 2px white; color: #009fce;}
+#terms .inner a:hover,
+#terms .inner:hover a{text-decoration: underline;}
 #terms label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
-#terms .bar {background: #e35a25;height: 0.5em;}
+#terms .bar {background: #e35a25; height: 30px;
+    margin: -26px 0 -9px -7px;
+    opacity: 0.16;}
 #terms .count,
 #hashtags .count {
     background-color: #EEEEEE;
     border-radius: 2px 2px 2px 2px;
     color: #666666;
     float: left;
-    font-size: 1.2em;
     margin: 2px 4px 0 0;
-    min-width: 22px;
+    min-width: 28px;
     padding: 5px 5px 3px 6px;
     text-align: right;
 }
