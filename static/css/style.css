@@ -15,6 +15,14 @@
 /*
 CONTROL BAR AREA
 */
+#control_bar {
+    background-color: #EEEEEE;
+    margin-top: -4px;
+    padding: 10px 0;
+}
+#control_bar form {
+    margin: 0;
+}
 #control_bar button {font-size: 0.9em;}
 #query {font-size: 0.9em;width: 340px;}
 #list {font-size: 0.9em;width: 340px;}

@@ -7,6 +7,7 @@
 {% block content %}
 
 <div id='control_bar' class="row-fluid">
+     <div class="container">
     <div class="span9">
         <form class="form-inline">
             <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter a new search" />
@@ -23,7 +24,10 @@
         Logged in as @{{ session.username }} <a href="{{ url_for('logout') }}">logout</a>
     </div>
 </div>
-        <h4 id="page_header">Saved Searches</h4>
+</div>
+  <div id="content" class="container">
+
+        <h4 id="page_header">Saved snapshots</h4>
 
 {% if error %}
 <div class="alert alert-danger">
@@ -68,7 +72,7 @@
 
 <div class="row-fluid">
     <div class="span6">
-    <h5>Searches</h5>
+    <h5>Search snapshots</h5>
 {% if searches|length %}
     {{ history_accordion('search_accordion', searches) }}
 {% else %}
@@ -77,7 +81,7 @@
     </div>
 
     <div class="span6">
-    <h5>Lists</h5>
+    <h5>List snapshots</h5>
 {% if lists|length %}
     {{ history_accordion('list_accordion', lists) }}
 {% else %}
@@ -89,7 +93,7 @@
 {% if searches|length or lists|length %}
 <div class="row-fluid">
     <div class="span12">
-    <button id="history_delete" class="btn btn-danger" onclick="delete_selected_history();">Delete Selected Results</button>
+    <button id="history_delete" class="btn btn-danger" onclick="delete_selected_history();">Delete selected snapshots</button>
     </div>
 </div>
 {% endif %}

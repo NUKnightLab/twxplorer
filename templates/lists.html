@@ -9,6 +9,7 @@
 
 {% block content %}
 <div id='control_bar' class="row-fluid">
+     <div class="container">
     <div class="span9">
         <form class="form-inline">
             <select id="list">
@@ -29,6 +30,8 @@
         Logged in as @{{ session.username }} <a href="{{ url_for('logout') }}">logout</a>
     </div>
 </div>
+</div>
+  <div id="content" class="container">
 
 <!-- START SAMPLE CODE FOR HOW TO ITERATE THROUGH SAVED RESULTS -->
 {% for r in saved_results %}

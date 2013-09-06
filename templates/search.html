@@ -9,6 +9,7 @@
 
 {% block content %}
 <div id='control_bar' class="row-fluid">
+    <div class="container">
     <div class="span9">
         <form class="form-inline">
             <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter a search term" />
@@ -25,6 +26,8 @@
         Logged in as @{{ session.username }} <a href="{{ url_for('logout') }}">logout</a>
     </div>
 </div>
+</div>
+  <div id="content" class="container">
 
 <!-- START SAMPLE CODE FOR HOW TO ITERATE THROUGH SAVED RESULTS -->
 {% for r in saved_results %}
@@ -57,19 +60,22 @@
     </div>
 </div>
 
-<div class="row-fluid">   
-     <div id='tweets' class="span4">
-        <p>Enter your search query, select a language, and click the <i class="icon-search"></i> 
-        button to search Twitter.</p>
-        
-        <p>The system will attempt to retrieve up to 500 tweets.  The tweets will
-        be displayed in this space.  Common terms, hashtags, and links will be displayed
-        in the panels to the right. <i class="icon-arrow-right"></i></p>
-        
-        <p>You can click on any term, hashtag, or link to filter the list of tweets
-         to those containing the selected item.</p>
-         
-        <!-- tweets go here -->       
+<div class="row-fluid">
+     <div class="span4">
+        <div class="frame-header">Terms</div>
+        <div id='tweets'>
+            <p>Enter your search query, select a language, and click the <i class="icon-search"></i> 
+            button to search Twitter.</p>
+            
+            <p>The system will attempt to retrieve up to 500 tweets.  The tweets will
+            be displayed in this space.  Common terms, hashtags, and links will be displayed
+            in the panels to the right. <i class="icon-arrow-right"></i></p>
+            
+            <p>You can click on any term, hashtag, or link to filter the list of tweets
+             to those containing the selected item.</p>
+             
+            <!-- tweets go here -->
+        </div>
     </div>
    <div class="span8">
         <div class="row-fluid spaced">   
