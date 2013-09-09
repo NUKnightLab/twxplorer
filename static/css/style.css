@@ -71,25 +71,33 @@ FILTERS
     margin: -26px 0 -9px -7px;
     opacity: 0.16;}
 #terms .count,
-#hashtags .count {
+#hashtags .count,
+#urls .count {
     background-color: #EEEEEE;
     border-radius: 2px 2px 2px 2px;
     color: #666666;
     float: left;
-    margin: 2px 4px 0 0;
-    min-width: 28px;
+    margin: 2px 4px 0 0; 
+    min-width:  28px; 
     padding: 5px 5px 3px 6px;
     text-align: right;
-}
+}  
+}  
 
-#hashtags {height: 360px;overflow: auto;font-size: 0.9em;}
+#hashtags .count { 
+    clear: both; 
+}
+#hashtags li a {
+    display: block;
+    margin: 6px 0 0;
+}
+#hashtags {height: 360px;overflow: auto;font-size: 0.9em; } 
 
 #urls {height: 160px;overflow: auto;font-size: 0.9em;}
-#urls a.external-link {margin-left: 10px;}
+#urls a.external-link {margin-left: 10px;} 
 #urls .count{float: right;width: 40px;margin-left: 10px;text-align: right;}
-
-#tweets {height: 614px;overflow: auto;}
-
+ 
+#tweets {height: 614px;overflow: auto;} 
 
 /* 
 HISTORY
