@@ -20,6 +20,21 @@
             </select>
             <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
             <button type="button" class="btn" id="save" style="display: none;">Save Results</button>
+                <div class="dropdown">
+    <a class="dropdown-toggle" data-toggle="dropdown" href="#">saved snapshots</a>
+    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+        {% for r in saved_results %}
+        <li>
+            {{ r.query }}
+            <ul class="unstyled"> 
+                {% for sess in r.sessions %}
+                <li><a href="">{{ sess.dt }}</a></li>
+            {% endfor %}
+            </ul>
+        </li>
+        {% endfor %}
+    </ul>
+    </div>
         </form>
     </div>
     <div id='username' class="span3">
@@ -29,15 +44,6 @@
 </div>
   <div id="content" class="container">
 
-<!-- START SAMPLE CODE FOR HOW TO ITERATE THROUGH SAVED RESULTS -->
-{% for r in saved_results %}
-    <p>{{ r.query }}: 
-    {% for sess in r.sessions %}
-        {{ sess.dt }},
-    {% endfor %}
-    <p>
-{% endfor %}
-<!-- END SAMPLE CODE -->
 
 {% if error %}
 <div class="alert alert-danger">
@@ -50,7 +56,7 @@
     <div class="span12">
         <ul class="inline breadcrumbs">
             <li>Search ></li>
-            <li>puttermhere @ <span id="timestamp"></span> 
+            <li><span id="current_term"></span> <span id="timestamp"></span> 
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
                 </div>
@@ -174,10 +180,9 @@ function set_timestamp() {
     if(_session.saved) {
         var d = Date.parse(_session.dt.split('.')[0]);
         var s = d.toString("M/d/yyyy HH:mm:ss");                   
-        $('#timestamp').html('[from '+s+']');
+        $('#timestamp').html('@ '+s);
     }
 }
-
 function filter_results(session_id, callback) { 
     show_filter(); 
     

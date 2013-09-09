@@ -7,6 +7,7 @@
 function init_modals() {
     $('#progress_modal').modal({keyboard: false, show: false})
     $('#confirm_modal').modal({keyboard: false, show: false});
+    $('.dropdown-toggle').dropdown()
 }
 
 function show_progress(msg) {
