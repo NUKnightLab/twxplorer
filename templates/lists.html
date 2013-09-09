@@ -171,7 +171,7 @@ function show_filter() {
 function set_timestamp() {
     if(_session.saved) {
         var d = Date.parse(_session.dt.split('.')[0]);
-        var s = d.toString("M/d/yyyy HH:mm:ss");                   
+        var s = d.toString("M/d/yy HH:mm");                   
         $('#timestamp').html('[from '+s+']');
     }
 }

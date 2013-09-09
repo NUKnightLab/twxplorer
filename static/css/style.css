@@ -51,6 +51,9 @@ FILTERS
     font-size: .9em;
 }
 
+.breadcrumbs {
+    font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
 .filter-list li .close {margin-left: 4px;}
 .filter-container a {padding-left: 6px;cursor: pointer;float: right;}
 
@@ -59,7 +62,6 @@ FILTERS
 #username a{padding-left: 10px;}
 
 #tweet_count {font-style: italic;font-size: 0.8em;text-align: left;}
-#timestamp {font-size: 0.8em;text-align: right;margin-left: 4px;font-weight: bold;}
 
 #terms {height: 360px;overflow: auto;font-size: 0.9em;}
 #terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer; clear: both;}
@@ -95,7 +97,8 @@ FILTERS
 
 #terms a,
 #hashtags a,
-#urls a {
+#urls a,
+a.internal {
     color: #ca4d1d;
 }  
 

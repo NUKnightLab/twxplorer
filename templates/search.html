@@ -19,7 +19,6 @@
 {% endfor %}
             </select>
             <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
-            <button type="button" class="btn" id="save" style="display: none;">Save Results</button>
             <div class="dropdown">
                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">saved snapshots</a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
@@ -57,13 +56,14 @@
     <div class="span12">
         <ul class="inline breadcrumbs">
             <li id='search_label'>Search ></li>
-            <li><span id="current_term"></span> <span id="timestamp"></span> 
+            <li><a onclick="clear_filters();" class="internal"><span id="current_term"></span> <span id="timestamp"></span></a>
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
                 </div>
             </li>
             <li><span id="tweet_count"></span></li>
-        
+            <li><button type="button" class="btn btn-link" id="save" style="display: none;">Save snapshot</button></li>
+        </ul>
     </div>
 </div>
 
@@ -161,6 +161,14 @@ function remove_filter(stem) {
     filter_results(_session._id);
 }
 
+function clear_filters() {
+    if(_filter.length > 0){
+        _filter = []
+        filter_results(_session._id);
+    }
+}
+
+
 function show_filter() {   
     var s = '';
     
@@ -180,7 +188,7 @@ function show_filter() {
 function set_timestamp() {
     if(_session.saved) {
         var d = Date.parse(_session.dt.split('.')[0]);
-        var s = d.toString("M/d/yyyy HH:mm:ss");                   
+        var s = d.toString("M/d/yy HH:mm");                   
         $('#timestamp').html('@ '+s);
     }
 }
@@ -209,7 +217,7 @@ function filter_results(session_id, callback) {
             }
             $('#current_term').html(data.search.query);
             $('#timestamp').html('@ '
-                + Date.parse(_session.dt.split('.')[0]).toString("M/d/yyyy HH:mm:ss"));
+                + Date.parse(_session.dt.split('.')[0]).toString("M/d/yy HH:mm"));
       
             $('#language').val(data.search.language);
             $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
