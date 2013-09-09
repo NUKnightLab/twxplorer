@@ -25,6 +25,21 @@
             <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
             <button type="button" class="btn" id="save" style="display: none;">Save Results</button>
         </form>
+        <div class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">saved snapshots</a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                {% for r in saved_results %}
+                <li>
+                    {{ r.full_name }}
+                    <ul class="unstyled"> 
+                        {% for sess in r.sessions %}
+                        <li><a href="/lists/{{ sess._id }}/">{{ sess.dt }}</a></li>
+                    {% endfor %}
+                    </ul>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
     <div id='username' class="span3">
         Logged in as @{{ session.username }} <a href="{{ url_for('logout') }}">logout</a>
@@ -32,17 +47,6 @@
 </div>
 </div>
   <div id="content" class="container">
-
-<!-- START SAMPLE CODE FOR HOW TO ITERATE THROUGH SAVED RESULTS -->
-{% for r in saved_results %}
-    <p>{{ r.full_name }}: 
-    {% for sess in r.sessions %}
-        {{ sess.dt }},
-    {% endfor %}
-    <p>
-{% endfor %}
-<!-- END SAMPLE CODE -->
-
 
 {% if error %}
 <div class="alert alert-danger">

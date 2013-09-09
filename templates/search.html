@@ -20,6 +20,7 @@
             </select>
             <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
             <button type="button" class="btn" id="save" style="display: none;">Save Results</button>
+            </form>
                 <div class="dropdown">
     <a class="dropdown-toggle" data-toggle="dropdown" href="#">saved snapshots</a>
     <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
@@ -28,14 +29,14 @@
             {{ r.query }}
             <ul class="unstyled"> 
                 {% for sess in r.sessions %}
-                <li><a href="">{{ sess.dt }}</a></li>
+                <li><a href="/search/{{ sess._id }}/">{{ sess.dt }}</a></li>
             {% endfor %}
             </ul>
         </li>
         {% endfor %}
     </ul>
     </div>
-        </form>
+        
     </div>
     <div id='username' class="span3">
         Logged in as @{{ session.username }} <a href="{{ url_for('logout') }}">logout</a>
