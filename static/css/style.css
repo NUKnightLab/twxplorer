@@ -63,16 +63,24 @@ FILTERS
 #terms {height: 360px;overflow: auto;font-size: 0.9em;}
 #terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer; clear: both;}
 #terms .inner {margin: 0 0 0 50px;padding:6px 0 0 0px;}
-#terms .inner a {text-shadow:0px 0px 2px white; color: #009fce;}
+#terms .inner a {text-shadow:0px 0px 2px white;}
 #terms .inner a:hover,
 #terms .inner:hover a{text-decoration: underline;}
 #terms label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
 #terms .bar {background: #e35a25; height: 30px;
     margin: -26px 0 -9px -7px;
     opacity: 0.16;}
+
+#terms,
+#hashtags,
+#urls {
+    font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
+}  
+
 #terms .count,
 #hashtags .count,
 #urls .count {
+    clear: both; 
     background-color: #EEEEEE;
     border-radius: 2px 2px 2px 2px;
     color: #666666;
@@ -82,22 +90,36 @@ FILTERS
     padding: 5px 5px 3px 6px;
     text-align: right;
 }  
+
+
+#terms a,
+#hashtags a,
+#urls a {
+    color: #ca4d1d;
 }  
 
-#hashtags .count { 
-    clear: both; 
+#control_bar .form-inline input[type="text"], 
+#control_bar .form-inline button, 
+#control_bar .form-inline select {
+    font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 #hashtags li a {
     display: block;
     margin: 6px 0 0;
 }
+
 #hashtags {height: 360px;overflow: auto;font-size: 0.9em; } 
 
 #urls {height: 160px;overflow: auto;font-size: 0.9em;}
-#urls a.external-link {margin-left: 10px;} 
-#urls .count{float: right;width: 40px;margin-left: 10px;text-align: right;}
+
+#urls li div {
+    margin: 7px 0 0 0;
+}
+
+#urls a:first-child {padding-right: 10px;} 
  
 #tweets {height: 614px;overflow: auto;} 
+#urls a.external-link {color: #1DACD6;} 
 
 /* 
 HISTORY

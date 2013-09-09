@@ -99,9 +99,11 @@
         <div class="row-fluid">
             <div class="span12 frame">
                 <div class="frame-header">Links</div>
-                <div id="urls" class="frame-body">
-                    <!-- hashtags go here -->
-                </div>   
+                <div class="frame-body">
+                    <ul id="urls" class="unstyled">
+                        <!-- hashtags go here -->
+                    </ul>
+                </div>
             </div>
         </div>
     </div>    
@@ -375,12 +377,14 @@ $(function() {
                             _url_map[info.url] = (info.title || info.url);
                             
                             html += ''
-                                + '<p>'
-                                + '<span class="count">('+url_counts[i][1]+')</span>'
+                                + '<li>'
+                                + '<span class="count">'+url_counts[i][1]+'</span>'
+                                + '<div>'
                                 + '<a href="javascript:void(0);" onclick="add_filter(\''+info.url+'\');">'+ _url_map[info.url] +'</a>'
                                 + '<a class="external-link" href="'+info.url+'" target="_blank" title="open url in new window">'
                                 + '<i class="icon-external-link"></i></a>'
-                                + '</p>';
+                                + '</div>';
+                                + '</li>';
                         }
                     
                         callback(html);
