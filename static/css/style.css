@@ -119,6 +119,7 @@ form .dropdown {
 }
 .dropdown-menu li{
     padding: 2px 0;
+    white-space: nowrap;
 }
 .dropdown-menu li.head{
     padding: 10px 0 0px;
