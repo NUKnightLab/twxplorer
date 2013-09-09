@@ -54,7 +54,8 @@ FILTERS
 .filter-list li .close {margin-left: 4px;}
 .filter-container a {padding-left: 6px;cursor: pointer;float: right;}
 
-#username {font-weight: bold;font-size: 0.8em;text-align: right; white-space: nowrap;}
+#username {padding-top: 4px;font-weight: bold;font-size: 0.8em;text-align: right; white-space: nowrap;    font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
 #username a{padding-left: 10px;}
 
 #tweet_count {font-style: italic;font-size: 0.8em;text-align: left;}
@@ -107,7 +108,34 @@ FILTERS
     display: block;
     margin: 6px 0 0;
 }
-
+form .dropdown {
+    padding-top: 4px;
+    font-size: .8em;
+    float: right;
+    font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+.dropdown-menu {
+    padding: 5px 13px;
+}
+.dropdown-menu li{
+    padding: 2px 0;
+}
+.dropdown-menu li.head{
+    padding: 10px 0 0px;
+}
+.dropdown-menu > li.head > a {
+    color: #1DACD6;
+    display: inline;
+    line-height: 16px;
+    padding: 0 0 0 0;
+    white-space: nowrap;
+}
+.form-inline .dropdown-menu > li.head:hover, .form-inline .dropdown-menu > li.head > a:hover{
+    color: #1DACD6;
+    background-color: transparent;
+    background-image: none;
+    text-decoration: underline;
+}
 #hashtags {height: 360px;overflow: auto;font-size: 0.9em; } 
 
 #urls {height: 160px;overflow: auto;font-size: 0.9em;}
