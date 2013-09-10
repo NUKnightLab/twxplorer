@@ -5,7 +5,7 @@
       <div class="row-fluid">
         <hgroup class="span12">
           <h1 class="logo-mark xl">twXplorer</h1>
-          <h2 class="intro">put something here</h2>
+          <h2 class="intro">Fine-tune your twitter searches</h2>
         </hgroup>
       </div>
     </header>
@@ -13,7 +13,7 @@
 
 {% if not session.username %}
     <div class="row-fluid">
-        <div class="span12">
+        <div class="span8 offset2 text-center">
 <p>Click the "Sign in with Twitter" button to get started with twXplorer.  You 
 will be redirected to a page on Twitter to authorize twXplorer to make requests
 to Twitter's search API on your behalf.</p>
@@ -28,12 +28,29 @@ to Twitter's search API on your behalf.</p>
         </p>
         </div>
     </div>
-{% endif %}           
-    
+{% else %} 
+ <div class="row-fluid">
+    <div id='' class="span8 offset2 text-center">
+      <p>Enter your <a href="/search/">search</a> term to see a snapshot of related activity in the latest 500 tweets. twXplorer will break down the most common terms, hashtags, and links for you to filter and drill down furtner.</p>
+      <p>You are currently logged in as <b>@{{ session.username }}</b> - <a href="{{ url_for('logout') }}">logout</a>
+    </div> 
+</div>      
+{% endif %}
+<hr>
     <div class="row-fluid">
-      <div class="span12">
-        <h2>About</h2>
-        <p>Put some about text here.</p>
-      </div>        
+        <div class="span4 text-center">
+            <p><img class="round" src="http://media.knightlab.com/buzz/img/screen1.png"></p>
+            <p>Search twitter for a word or phrase in 12 different languages</p>
+        </div>
+        <div class="span4 text-center">
+           <p><img class="round" src="http://media.knightlab.com/buzz/img/screen2.png"></p>
+           <p>View popular hashtags, terms and links found in your searches.</p>
+        </div>
+        <div class="span4 text-center">
+            <p><img class="round" src="http://media.knightlab.com/buzz/img/screen3.png"></p>
+            <p>Save snapshots for later viewing.</p>
+        </div>
     </div>
+  </div>
+</section>
 {% endblock %}

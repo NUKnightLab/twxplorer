@@ -4,8 +4,6 @@
         Search
     {%- elif endpoint == 'lists' -%}
         Lists
-    {%- elif endpoint == 'history' -%}
-        History
     {%- elif endpoint == 'about' -%}
         About
     {% endif %}
@@ -73,7 +71,6 @@
             {% if session.username %}
             {{ navitem('search') }}
             {{ navitem('lists') }}
-            {{ navitem('history') }}
             {% endif %}
           </ul>
           <ul class="nav pull-right">

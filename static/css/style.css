@@ -3,7 +3,11 @@
 .center {text-align: center;}
 
 .frame {border: 1px solid #dddddd;border-radius: 3px;padding: 0 0 0 0;}
-.frame-header {background-color: #f5f5f5;color: #333333;border-bottom: 1px solid #dddddd;padding: 4px;font-size: 0.9em;font-weight: 500;}
+.frame-header {background-color: #f5f5f5;color: #333333;border-bottom: 1px solid #dddddd;padding: 4px;font-size: 0.9em;font-weight: bold;}
+.frame-header.tweet-header {
+    border: 1px solid #DDDDDD;
+    border-radius: 3px 3px 0 0;
+}
 .frame-body {padding: 4px;}
 
 .spaced {margin-bottom: 14px;}
@@ -15,6 +19,14 @@
 /*
 CONTROL BAR AREA
 */
+.cover {
+        background-color: #FFFFFF;
+    height: 81%;
+    opacity: 0.7;
+    position: absolute;
+    top: 170px;
+    width: 100%;
+}
 #control_bar {
     background-color: #EEEEEE;
     margin-top: -4px;
@@ -31,7 +43,9 @@ CONTROL BAR AREA
 ALERTS/MODALS
 */
 #progress_modal .icon-spinner {margin-right: 6px;}
-
+.internal {
+    cursor: pointer;
+}
 /* 
 FILTERS
 */
@@ -51,7 +65,8 @@ FILTERS
     font-size: .9em;
 }
 
-.breadcrumbs {
+.breadcrumbs,
+.breadcrumbs .btn {
     font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
 .filter-list li .close {margin-left: 4px;}
@@ -133,6 +148,12 @@ form .dropdown {
     line-height: 16px;
     padding: 0 0 0 0;
     white-space: nowrap;
+}
+.round {
+    border: 1px solid #DDDDDD;
+    border-radius: 100% 100% 100% 100%;
+    max-width: 300px;
+    width: 70%;
 }
 .form-inline .dropdown-menu > li.head:hover, .form-inline .dropdown-menu > li.head > a:hover{
     color: #1DACD6;

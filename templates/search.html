@@ -55,7 +55,7 @@
 <div class="row-fluid spaced">   
     <div class="span12">
         <ul class="inline breadcrumbs">
-            <li id='search_label'>Search ></li>
+            <li id='search_label'>Enter a search term above to get started.</li>
             <li><a onclick="clear_filters();" class="internal"><span id="current_term"></span> <span id="timestamp"></span></a>
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
@@ -69,19 +69,9 @@
 
 <div class="row-fluid">
      <div class="span4">
-        <div class="frame-header">Recent Tweets</div>
+        <div class="frame-header tweet-header">Recent Tweets</div>
         <div id='tweets'>
-            <p>Enter your search query, select a language, and click the <i class="icon-search"></i> 
-            button to search Twitter.</p>
-            
-            <p>The system will attempt to retrieve up to 500 tweets.  The tweets will
-            be displayed in this space.  Common terms, hashtags, and links will be displayed
-            in the panels to the right. <i class="icon-arrow-right"></i></p>
-            
-            <p>You can click on any term, hashtag, or link to filter the list of tweets
-             to those containing the selected item.</p>
-             
-            <!-- tweets go here -->
+            <div class="cover"></div><!-- tweets go here -->
         </div>
     </div>
    <div class="span8">
