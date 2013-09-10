@@ -20,12 +20,7 @@
 CONTROL BAR AREA
 */
 .cover {
-        background-color: #FFFFFF;
-    height: 81%;
-    opacity: 0.7;
-    position: absolute;
-    top: 170px;
-    width: 100%;
+    opacity: 0.4;
 }
 #control_bar {
     background-color: #EEEEEE;

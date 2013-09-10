@@ -67,11 +67,11 @@
     </div>
 </div>
 
-<div class="row-fluid">
+<div id="main-content" class="row-fluid cover">
      <div class="span4">
         <div class="frame-header tweet-header">Recent Tweets</div>
         <div id='tweets'>
-            <div class="cover"></div><!-- tweets go here -->
+           <!-- tweets go here -->
         </div>
     </div>
    <div class="span8">
@@ -199,7 +199,7 @@ function filter_results(session_id, callback) {
             _session = data.session;   
             
             $('#query').val('');
-            
+            $('#main-content').removeClass('cover');
             if(_session.saved) {
                 $('#search_label').html('Saved Snapshot >');
             } else {
