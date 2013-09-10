@@ -59,6 +59,13 @@ FILTERS
     color: #333;
     font-size: .9em;
 }
+.filter-list li.blank {
+    background-color: rgba(0, 0, 0, 0);
+    border: medium none;
+    border-radius: 0 0 0 0;
+    color: #333333;
+    font-size: 1em;
+}
 
 .breadcrumbs,
 .breadcrumbs .btn {
@@ -76,13 +83,16 @@ FILTERS
 #terms {height: 360px;overflow: auto;font-size: 0.9em;}
 #terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer; clear: both;}
 #terms .inner {margin: 0 0 0 50px;padding:6px 0 0 0px;}
-#terms .inner a {text-shadow:0px 0px 2px white;}
+#terms .inner a {text-shadow:0px 0px 2px white; z-index: 1;}
 #terms .inner a:hover,
 #terms .inner:hover a{text-decoration: underline;}
 #terms label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
 #terms .bar {background: #e35a25; height: 30px;
     margin: -26px 0 -9px -7px;
-    opacity: 0.16;}
+    opacity: 0.16;
+   position: relative;
+    z-index: -1;
+}
 
 #terms,
 #hashtags,
