@@ -31,7 +31,7 @@ to Twitter's search API on your behalf.</p>
 {% else %} 
  <div class="row-fluid">
     <div id='' class="span8 offset2 text-center">
-      <p>Enter your <a href="/search/">search</a> term to see a snapshot of related activity in the latest 500 tweets. twXplorer will break down the most common terms, hashtags, and links for you to filter and drill down furtner.</p>
+      <p>Enter your <a href="/search/">search</a> term to see a snapshot of related activity in the latest 500 tweets. twXplorer will break down the most common terms, hashtags, and links for you to filter and drill down further.</p>
       <p>You are currently logged in as <b>@{{ session.username }}</b> - <a href="{{ url_for('logout') }}">logout</a>
     </div> 
 </div>      
@@ -39,16 +39,16 @@ to Twitter's search API on your behalf.</p>
 <hr>
     <div class="row-fluid">
         <div class="span4 text-center">
-            <p><img class="round" src="http://media.knightlab.com/buzz/img/screen1.png"></p>
             <p>Search twitter for a word or phrase in 12 different languages</p>
+            <p><img class="round" src="{{ STATIC_URL }}img/twx_screen1.png"></p>
         </div>
         <div class="span4 text-center">
-           <p><img class="round" src="http://media.knightlab.com/buzz/img/screen2.png"></p>
-           <p>View popular hashtags, terms and links found in your searches.</p>
+           <p>View popular terms, hashtags and links found in your searches.</p>
+           <p><img class="round" src="{{ STATIC_URL }}img/twx_screen2.png"></p>
         </div>
         <div class="span4 text-center">
-            <p><img class="round" src="http://media.knightlab.com/buzz/img/screen3.png"></p>
             <p>Save snapshots for later viewing.</p>
+            <p><img class="round" src="{{ STATIC_URL }}img/twx_screen3.png"></p>
         </div>
     </div>
   </div>

@@ -65,6 +65,7 @@ FILTERS
     border-radius: 0 0 0 0;
     color: #333333;
     font-size: 1em;
+    padding: 3px 6px;
 }
 
 .breadcrumbs,
