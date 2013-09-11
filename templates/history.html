@@ -8,19 +8,7 @@
 
 <div id='control_bar' class="row-fluid">
      <div class="container">
-    <div class="span9">
-        <form class="form-inline">
-            <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter a new search" />
-            <select id="language">
-{% for item in languages %}
-                <option value='{{ item.1 }}'>{{ item.0|capitalize }}</option>
-{% endfor %}
-            </select>
-            <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
-            <button type="button" class="btn" id="save" style="display: none;">Save Results</button>
-        </form>
-    </div>
-    <div id='username' class="span3">
+    <div id='username' class="span12">
         Logged in as @{{ session.username }} <a href="{{ url_for('logout') }}">logout</a>
     </div>
 </div>

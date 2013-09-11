@@ -22,8 +22,7 @@
                 <option value='{{ item.1 }}'>{{ item.0|capitalize }}</option>
 {% endfor %}
             </select>
-            <button type="button" class="btn btn-default" id="search"><i class="icon-search"></i></button>
-            <button type="button" class="btn" id="save" style="display: none;">Save Results</button>
+            <button type="button" class="btn btn-default" id="search">view</button>
             <div class="dropdown">
                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">saved snapshots</a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
@@ -57,29 +56,25 @@
 {% endif %}
 
 <div class="row-fluid spaced">   
-    <div class="span4">
-        <span id="tweet_count"></span>
-        <span id="timestamp"></span>
-    </div>
-    <div class="span8 filter-container">
-        <ul id="filter_list" class="filter-list">
+    <div class="span12">
+        <ul class="inline breadcrumbs">
+            <li><span id='list_label'>Choose one of your lists above to begin.</span> <span id="timestamp"></span></li>
+            <li><a onclick="clear_filters();" class="internal"><span id="current_term">List-name-here</span></a>
+                <div class="filter-container">
+                    <ul id="filter_list" class="filter-list"></ul>
+                </div>
+            </li>
+            <li><span id="tweet_count"></span></li>
+            <li><button type="button" class="btn btn-link" id="save" style="display: none;">Save snapshot</button></li>
         </ul>
     </div>
 </div>
-
-<div class="row-fluid">   
-     <div id='tweets' class="span4">
-        <p>Select a list and click the <i class="icon-search"></i> 
-        button to retrieve tweets authored by members of the specified list.</p>
-        
-        <p>The system will attempt to retrieve up to 500 tweets.  The tweets will
-        be displayed in this space.  Common terms, hashtags, and links will be displayed
-        in the panels to the right. <i class="icon-arrow-right"></i></p>
-        
-        <p>You can click on any term, hashtag, or link to filter the list of tweets
-         to those containing the selected item.</p>
-         
-        <!-- tweets go here -->       
+<div id="main-content" class="row-fluid cover">
+    <div class="span4">
+        <div class="frame-header tweet-header">Recent Tweets</div>
+        <div id='tweets'>
+           <!-- tweets go here -->
+        </div>
     </div>
    <div class="span8">
         <div class="row-fluid spaced">   
@@ -152,9 +147,19 @@ function remove_filter(stem) {
     filter_results(_session._id);
 }
 
+function clear_filters() {
+    if(_filter.length > 0){
+        _filter = []
+        filter_results(_session._id);
+    }
+}
+
 function show_filter() {   
     var s = '';
     
+    if(_filter.length > 0) {
+       s = '<li class="blank">&nbsp; Filters: </li>';
+    }
     for(var i = 0; i < _filter.length; i++) {
         s += '<li>'+get_term(_filter[i])
             + '<button class="close" onclick="remove_filter(\''+_filter[i]+'\');">&times;</button>'
@@ -195,7 +200,12 @@ function filter_results(session_id, callback) {
             $('#list').val(data.search.list_id);
             $('#language').val(data.search.language);
             $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
-            
+            $('#main-content').removeClass('cover');
+            if(_session.saved) {
+                $('#list_label').html('Saved snapshot from list:');
+            } else {
+                $('#list_label').html('List:');
+            }
             set_timestamp();
                      
             _TermsLoader.set_data(data.stem_counts).load_more();
@@ -316,8 +326,8 @@ $(function() {
                     count = hashtag_counts[i][1];
             
                     html += ''
-                        + '<p><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
-                        + hashtag+'</a> ('+count+')</p>';
+                        + '<li><span class="count">'+count+'</span><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
+                        + hashtag+'</a></li>';
                 }  
             } else {
                 html = '<p class="msg">no hashtags found</p>';
@@ -367,12 +377,14 @@ $(function() {
                             _url_map[info.url] = (info.title || info.url);
                             
                             html += ''
-                                + '<p>'
-                                + '<span class="count">('+url_counts[i][1]+')</span>'
+                                + '<li>'
+                                + '<span class="count">'+url_counts[i][1]+'</span>'
+                                + '<div>'
                                 + '<a href="javascript:void(0);" onclick="add_filter(\''+info.url+'\');">'+ _url_map[info.url] +'</a>'
                                 + '<a class="external-link" href="'+info.url+'" target="_blank" title="open url in new window">'
                                 + '<i class="icon-external-link"></i></a>'
-                                + '</p>';
+                                + '</div>';
+                                + '</li>';
                         }
                     
                         callback(html);

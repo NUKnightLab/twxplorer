@@ -55,7 +55,7 @@
 <div class="row-fluid spaced">   
     <div class="span12">
         <ul class="inline breadcrumbs">
-            <li><span id='search_label'>Enter a search term above to get started.</span> <span id="timestamp"></span>:</li>
+            <li><span id='search_label'>Enter a search term above to get started.</span> <span id="timestamp"></span></li>
             <li><a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
@@ -178,13 +178,6 @@ function show_filter() {
 // Get stats and tweets for session_id using _filter
 //
 
-function set_timestamp() {
-    if(_session.saved) {
-        var d = Date.parse(_session.dt.split('.')[0]);
-        var s = d.toString("M/d/yy HH:mm");                   
-        $('#timestamp').html('@ '+s);
-    }
-}
 function filter_results(session_id, callback) { 
     show_filter(); 
     
@@ -204,13 +197,13 @@ function filter_results(session_id, callback) {
             $('#query').val('');
             $('#main-content').removeClass('cover');
             if(_session.saved) {
-                $('#search_label').html('Saved Snapshot');
+                $('#search_label').html('Saved snapshot');
             } else {
                 $('#search_label').html('Search');
             }
             $('#current_term').html(data.search.query);
             $('#timestamp').html('on '
-                + Date.parse(_session.dt.split('.')[0]).toString("M/d/yy HH:mm"));
+                + Date.parse(_session.dt.split('.')[0]).toString("M/d/yy HH:mm")+':');
       
             $('#language').val(data.search.language);
             $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
