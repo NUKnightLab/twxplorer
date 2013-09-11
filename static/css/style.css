@@ -154,7 +154,10 @@ form .dropdown {
     white-space: nowrap;
 }
 .dropdown-menu li.head{
-    padding: 10px 0 0px;
+    background-color: #F4F4F4;
+    border-radius: 5px 5px 0 0;
+    margin: -5px -13px 10px;
+    padding: 7px 12px;
 }
 .dropdown-menu > li.head > a {
     color: #1DACD6;

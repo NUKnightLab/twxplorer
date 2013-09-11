@@ -22,6 +22,7 @@
             <div class="dropdown">
                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">saved snapshots</a>
                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <li class="head"><a href="/history/">view all saved snapshots</a></li>
                     {% for r in saved_results %}
                     <li>
                         {{ r.query }}
@@ -32,7 +33,6 @@
                         </ul>
                     </li>
                     {% endfor %}
-                    <li class="head"><a href="/history/">view all saved snapshots</a></li>
                 </ul>
             </div>
         </form>
