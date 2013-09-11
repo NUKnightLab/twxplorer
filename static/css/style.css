@@ -186,3 +186,20 @@ HISTORY
 .accordion-heading input[type=checkbox] {float: right;margin: 14px 15px 10px 10px;}
 .accordion-inner input[type=checkbox] {float: right;margin: 6px 0 10px 10px;}
 #history_delete {float: right;}
+
+
+@media screen and (max-width: 979px) {
+    #control_bar {
+        margin: 0 0 0 -20px;
+        padding: 12px 30px 0 10px;
+    }
+#username {
+    clear: both;
+    margin: 0;
+    text-align: left;
+    }
+    #control_bar .container .span9 {
+        width: 100%;
+    }
+}
+
