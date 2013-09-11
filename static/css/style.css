@@ -22,6 +22,11 @@
 /*
 CONTROL BAR AREA
 */
+
+.modal {
+    width: 300px;
+    margin-left: -120px;
+}
 .cover {
     opacity: 0.4;
 }
@@ -34,7 +39,7 @@ CONTROL BAR AREA
     margin: 0;
 }
 #control_bar button {font-size: 0.9em;}
-#query {font-size: 0.9em;width: 340px;}
+#query {font-size: 0.9em;}
 #list {font-size: 0.9em;width: 340px;}
 #language {font-size: 0.9em;width: 130px;}
 /*
@@ -208,3 +213,22 @@ HISTORY
     }
 }
 
+@media all and (max-width: 568px) {
+#overview .logo-mark {
+    font-size: 52px;
+}
+#overview .logo-mark span {
+    font-size: 18px;
+}
+#overview .lead {
+    font-size: 20px;
+    line-height: 24px;
+}
+.span4.text-center img {
+    border-radius: 100% 100% 100% 100%;
+    height: auto;
+    max-width: 200px;
+    width: 100%;
+}
+
+}
