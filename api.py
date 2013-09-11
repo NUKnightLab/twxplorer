@@ -303,9 +303,9 @@ def lists(session_id=''):
             list_r['lists'] = lists       
             list_r['_id'] = _list.save(list_r, manipulate=True)
     
-        if not list_r['lists']:
-            raise Exception('You are not subscribed to any lists.')
-            
+        # DEBUG
+        #list_r['lists'] = []
+                    
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_r['lists'])
@@ -511,6 +511,15 @@ def filter(session_id):
             {'_id': bson.ObjectId(session_r['search_id'])})
         if not search_r:
             raise Exception('Search not found')
+            
+        if 'list_id' in search_r:
+            search_r['list_name'] = 'unknown'
+            list_r = _list.find_one({'username': search_r['username']})
+            if list_r:
+                for li in list_r['lists']:
+                    if li['id_str'] == search_r['list_id']:
+                        search_r['list_name'] = li['full_name']
+                        break
             
         # Find tweets
         params = {'session_id': session_id}

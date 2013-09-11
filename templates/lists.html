@@ -13,6 +13,7 @@
     <div class="span9">
         <form class="form-inline">
             <select id="list">
+                <option value=''>choose list</option>
 {% for list in lists %}
                 <option value='{{ list.id_str }}'>{{ list.full_name }}</option>
 {% endfor %}
@@ -58,8 +59,12 @@
 <div class="row-fluid spaced">   
     <div class="span12">
         <ul class="inline breadcrumbs">
+{% if not lists %}
+            <li><span id='list_label'>hey you have no lists, sucka!</li>
+{% else %}
             <li><span id='list_label'>Choose one of your lists above to begin.</span> <span id="timestamp"></span></li>
-            <li><a onclick="clear_filters();" class="internal"><span id="current_term">List-name-here</span></a>
+{% endif %}
+            <li><a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
                 </div>
@@ -69,6 +74,7 @@
         </ul>
     </div>
 </div>
+
 <div id="main-content" class="row-fluid cover">
     <div class="span4">
         <div class="frame-header tweet-header">Recent Tweets</div>
@@ -173,14 +179,6 @@ function show_filter() {
 // Get stats and tweets for session_id using _filter
 //
 
-function set_timestamp() {
-    if(_session.saved) {
-        var d = Date.parse(_session.dt.split('.')[0]);
-        var s = d.toString("M/d/yy HH:mm");                   
-        $('#timestamp').html('[from '+s+']');
-    }
-}
-
 function filter_results(session_id, callback) { 
     show_filter(); 
     
@@ -197,16 +195,19 @@ function filter_results(session_id, callback) {
         function(data) {       
             _session = data.session;    
             
-            $('#list').val(data.search.list_id);
-            $('#language').val(data.search.language);
-            $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
+            $('#list').val('');
             $('#main-content').removeClass('cover');
             if(_session.saved) {
                 $('#list_label').html('Saved snapshot from list:');
             } else {
-                $('#list_label').html('List:');
+                $('#list_label').html('List');
             }
-            set_timestamp();
+            $('#current_term').html(data.search.list_name);
+            $('#timestamp').html('on '
+                + Date.parse(_session.dt.split('.')[0]).toString("M/d/yy HH:mm")+':');
+           
+            $('#language').val(data.search.language);
+            $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
                      
             _TermsLoader.set_data(data.stem_counts).load_more();
             _HashtagLoader.set_data(data.hashtag_counts).load_more();
@@ -273,7 +274,6 @@ $(function() {
              },
             function(data) {  
                 _session.saved = 1; 
-                set_timestamp();
                 hide_progress();
                 $('#save').hide();
             }
