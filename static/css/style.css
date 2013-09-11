@@ -16,6 +16,9 @@
 #content {
     min-height: 500px;
 }
+.icon-twitter.pull-right {
+    color: #1dacd6;
+}
 /*
 CONTROL BAR AREA
 */
@@ -179,7 +182,9 @@ form .dropdown {
  
 #tweets {height: 614px;overflow: auto;} 
 #urls a.external-link {color: #1DACD6;} 
-
+.span12 h4 {
+    padding-top: 20px;
+}
 /* 
 HISTORY
 */
