@@ -5,49 +5,48 @@
       <div class="row-fluid">
         <hgroup class="span12">
           <h1 class="logo-mark xl">twXplorer</h1>
-          <h2 class="intro">Fine-tune your twitter searches</h2>
+          <h2 class="intro">A smarter way to search Twitter</h2>
+            {% if not session.username %}
+              <p>
+                <a class="btn btn-large btn-info" href="{{ url_for('auth') }}">
+                  <i class="icon-twitter"></i>&nbsp; Sign in with Twitter
+                </a>
+              </p>
+            {% else %} 
+              <p>You are currently logged in as <b>@{{ session.username }}</b> - <a href="{{ url_for('logout') }}">logout</a></p>
+            {% endif %}
         </hgroup>
       </div>
     </header>
+
   <div id="content" class="container">
 
 {% if not session.username %}
     <div class="row-fluid">
         <div class="span8 offset2 text-center">
-<p>Click the "Sign in with Twitter" button to get started with twXplorer.  You 
-will be redirected to a page on Twitter to authorize twXplorer to make requests
-to Twitter's search API on your behalf.</p>
-        </div>
-    </div>
-    <div class="row-fluid">
-        <div class="span12 center">
-        <p>
-        <a href="{{ url_for('auth') }}">
-        <img src="{{ STATIC_URL }}img/sign-in-with-twitter-gray.png" width="158" height="28" alt="Sign in with Twitter" />
-        </a>
-        </p>
+<p>Click the "Sign in with Twitter" button above to get started with twXplorer.</p>
+<p>Once logged in, you can enter search terms to see a snapshot of related activity in the latest 500 tweets. twXplorer will break down the most common terms, hashtags, and links for you to filter and drill down further.</p>
         </div>
     </div>
 {% else %} 
  <div class="row-fluid">
     <div id='' class="span8 offset2 text-center">
-      <p>Enter your <a href="/search/">search</a> term to see a snapshot of related activity in the latest 500 tweets. twXplorer will break down the most common terms, hashtags, and links for you to filter and drill down further.</p>
-      <p>You are currently logged in as <b>@{{ session.username }}</b> - <a href="{{ url_for('logout') }}">logout</a>
+      <p>Enter <a href="/search/">search</a> terms to see a snapshot of related activity in the latest 500 tweets. twXplorer will break down the most common terms, hashtags, and links for you to filter and drill down further.</p>
     </div> 
 </div>      
 {% endif %}
 <hr>
     <div class="row-fluid">
         <div class="span4 text-center">
-            <p>Search twitter for a word or phrase in 12 different languages</p>
+            <h5>Search twitter for a word or phrase in 12 different languages</h5>
             <p><img class="round" src="{{ STATIC_URL }}img/twx_screen1.png"></p>
         </div>
         <div class="span4 text-center">
-           <p>View popular terms, hashtags and links found in your searches.</p>
+           <h5>View popular terms, hashtags and links found in your searches.</h5>
            <p><img class="round" src="{{ STATIC_URL }}img/twx_screen2.png"></p>
         </div>
         <div class="span4 text-center">
-            <p>Save snapshots for later viewing.</p>
+            <h5>Save snapshots for later viewing.</h5>
             <p><img class="round" src="{{ STATIC_URL }}img/twx_screen3.png"></p>
         </div>
     </div>
