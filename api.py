@@ -183,6 +183,18 @@ def logout():
 # Main views
 #
 
+def _get_list_map():
+    """
+    Return list map for username (id => full_name)
+    """
+    list_r = _list.find_one({'username': session['username']})
+    list_map = {}
+    if list_r:
+        for r in list_r['lists']:
+            list_map[r['id_str']] = r['full_name']
+    return list_map
+    
+    
 def _get_saved_results(params=None):
     """
     Get saved results matching params, grouped by search
@@ -190,12 +202,8 @@ def _get_saved_results(params=None):
     search_by_query = []
     search_by_list = []
     
-    list_r = _list.find_one({'username': session['username']})
-    list_map = {}
-    if list_r:
-        for r in list_r['lists']:
-            list_map[r['id_str']] = r['full_name']
-    
+    list_map = _get_list_map()
+        
     search_q = {'username': session['username']}
     search_q.update(params or {})
     
@@ -205,9 +213,10 @@ def _get_saved_results(params=None):
         search_r['sessions'] = []
         
         if 'list_id' in search_r:
-            search_r['full_name'] = list_map.get(search_r['list_id']) \
+            search_r['list_name'] = list_map.get(search_r['list_id']) \
+                or search_r['list_name'] \
                 or '[unknown]'
-                
+                 
         session_cursor = _session.find(
             {'search_id': search_r['_id'], 'saved': 1},
             fields=['_id', 'dt'],
@@ -286,6 +295,8 @@ def lists(session_id=''):
             refresh = True
         elif (list_r['dt'] + delta) < datetime.datetime.now():
             refresh = True
+        elif request.args.get('refresh'):
+            refresh = True
         
         if refresh:
             api = tweepy.API(get_oauth())
@@ -303,12 +314,14 @@ def lists(session_id=''):
             list_r['lists'] = lists       
             list_r['_id'] = _list.save(list_r, manipulate=True)
     
+        list_map = _get_list_map()
+
         # DEBUG
         #list_r['lists'] = []
                     
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, saved_results=saved_results,
-            lists=list_r['lists'])
+            lists=list_r['lists'], list_map=json.dumps(list_map))
     except tweepy.TweepError, e:
         traceback.print_exc()
         return render_template('lists.html', session_id=session_id,
@@ -351,11 +364,13 @@ def analyze():
 
         query = request.args.get('query')
         list_id = request.args.get('list_id')
-        
+         
         if query:
             query_lower = query.lower()
-        elif not list_id:    
-            raise Exception('List not found')                  
+        elif list_id:
+            list_map = _get_list_map()
+        else:    
+            raise Exception('No query or list specified')                  
                
         # Get api object
         api = tweepy.API(get_oauth())
@@ -373,7 +388,9 @@ def analyze():
         if not search_r:
             search_r = param
             if query:
-                search_r['query'] = query           
+                search_r['query'] = query   
+            else:
+                search_r['list_name'] = list_map[list_id]    
             search_r['_id'] = _search.save(search_r, manipulate=True)
         search_id = str(search_r['_id'])
         
@@ -511,16 +528,7 @@ def filter(session_id):
             {'_id': bson.ObjectId(session_r['search_id'])})
         if not search_r:
             raise Exception('Search not found')
-            
-        if 'list_id' in search_r:
-            search_r['list_name'] = 'unknown'
-            list_r = _list.find_one({'username': search_r['username']})
-            if list_r:
-                for li in list_r['lists']:
-                    if li['id_str'] == search_r['list_id']:
-                        search_r['list_name'] = li['full_name']
-                        break
-            
+                        
         # Find tweets
         params = {'session_id': session_id}
         

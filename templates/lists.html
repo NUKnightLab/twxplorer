@@ -9,7 +9,7 @@
 
 {% block content %}
 <div id='control_bar' class="row-fluid">
-     <div class="container">
+    <div class="container">
     <div class="span9">
         <form class="form-inline">
             <select id="list">
@@ -30,7 +30,7 @@
                     <li class="head"><a href="/history/">view all saved snapshots</a></li>
                     {% for r in saved_results %}
                     <li>
-                        {{ r.full_name }}
+                        {{ r.list_name }}
                         <ul class="unstyled"> 
                             {% for sess in r.sessions %}
                             <li><a href="/lists/{{ sess._id }}/">{{ sess.dt }}</a></li>
@@ -114,6 +114,7 @@
 
 var _session = {};
 var _url_map = {};
+var _list_map = {{ list_map|safe }};
 
 var _filter = [];   // current filter      
 
@@ -202,7 +203,7 @@ function filter_results(session_id, callback) {
             } else {
                 $('#list_label').html('List');
             }
-            $('#current_term').html(data.search.list_name);
+            $('#current_term').html(_list_map[data.search.list_id] || data.search.list_name || '[unknown]');
             $('#timestamp').html('on '
                 + Date.parse(_session.dt.split('.')[0]).toString("M/d/yy HH:mm")+':');
            
