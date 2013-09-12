@@ -214,7 +214,7 @@ def _get_saved_results(params=None):
         
         if 'list_id' in search_r:
             search_r['list_name'] = list_map.get(search_r['list_id']) \
-                or search_r['list_name'] \
+                or search_r.get('list_name') \
                 or '[unknown]'
                  
         session_cursor = _session.find(
