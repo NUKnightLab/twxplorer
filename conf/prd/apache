@@ -1,7 +1,7 @@
 <VirtualHost *:80>
-    ServerName twxplorer.knightlabprojects.com
-    ServerAlias twxplorer.knightlabprojects.com
-    ServerAdmin admin@knightlabprojects.com
+    ServerName twxplorer.knightlab.com
+    ServerAlias twxplorer.knightlab.com
+    ServerAdmin admin@knightlab.com
     ErrorLog /var/log/apache2/twxplorer.log
 
     LogLevel info
