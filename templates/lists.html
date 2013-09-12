@@ -224,9 +224,7 @@ function filter_results(session_id, callback) {
 //
 // on load
 //
-$(function() {
-    $('#progress_modal').modal({keyboard: false, show: false})
-            
+$(function() {           
     if($('#language option[value={{ session.language }}]').length) {
         $('#language').val('{{ session.language }}');
     } else {
