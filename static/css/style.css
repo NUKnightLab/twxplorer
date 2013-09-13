@@ -76,9 +76,15 @@ FILTERS
     padding: 3px 6px;
 }
 
+button#save.btn {
+    padding-top: 0;
+}
 .breadcrumbs,
 .breadcrumbs .btn {
     font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+ul.inline.breadcrumbs li {
+    vertical-align: top;
 }
 .filter-list li .close {margin-left: 4px;}
 .filter-container a {padding-left: 6px;cursor: pointer;float: right;}

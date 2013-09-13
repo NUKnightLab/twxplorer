@@ -64,10 +64,11 @@
 {% else %}
             <li><span id='list_label'>Choose one of your lists above to begin.</span> <span id="timestamp"></span></li>
 {% endif %}
-            <li><a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
+            <li>
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
                 </div>
+                <a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
             </li>
             <li><span id="tweet_count"></span></li>
             <li><button type="button" class="btn btn-link" id="save" style="display: none;">Save snapshot</button></li>

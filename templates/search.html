@@ -56,10 +56,11 @@
     <div class="span12">
         <ul class="inline breadcrumbs">
             <li><span id='search_label'>Enter your search above to get started.</span> <span id="timestamp"></span></li>
-            <li><a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
+            <li>
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
                 </div>
+                <a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
             </li>
             <li><span id="tweet_count"></span></li>
             <li><button type="button" class="btn btn-link" id="save" style="display: none;">Save snapshot</button></li>
