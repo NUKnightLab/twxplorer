@@ -4,8 +4,9 @@ import os
 from .base import *
 
 # Import secrets
+secrets_path = '../secrets/twxplorer/prd'
 sys.path.append(
-    os.path.normpath(os.path.join(PROJECT_ROOT, '../secrets/twxplorer/prd'))
+    os.path.normpath(os.path.join(PROJECT_ROOT, secrets_path))
 )
 from secrets import *
 
