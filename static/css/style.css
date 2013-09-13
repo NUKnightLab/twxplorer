@@ -195,6 +195,10 @@ form .dropdown {
 #urls a:first-child {padding-right: 10px;} 
  
 #tweets {height: 614px;overflow: auto;} 
+#tweets iframe {
+    width: 97% !important;
+    min-width: 205px !important;
+}
 #urls a.external-link {color: #1DACD6;} 
 .span12 h4 {
     padding-top: 20px;
