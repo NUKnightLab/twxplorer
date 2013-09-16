@@ -6,12 +6,11 @@
      <div class="span12">
         <h1>About</h1>
 
-        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-        quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-        consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-        cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-        proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        <p>TwXplorer helps you understand what people are talking about on Twitter. Simply search for a word or phrase and twXplorer automatically shows you the most commonly used words and hashtags and the mostly frequently shared links. Explore the results by filtering terms from your original query.</p>
+
+        <p>Want to understand a specific Twitter community? TwXplorer gives you all the tools above to explore Twitter lists you or others have created. </p>
+
+        <p>Designed as a tool for researchers and journalists, you can save your results as a "snapshot" for later review. </p>
         
         <hr>
         
@@ -19,49 +18,52 @@
 
         <h4>Sign In</h4>
 
-        <p><i class="icon-twitter icon-4x pull-right"></i>You have to sign in before you can use twXplorer.  You do this using OAuth, which is an authentication protocol that alows users to approve applications to act on their behalf without sharing their password.  We only request read access (as opposed to read/write access).  The application can only read data and has no ability to update any user's information.</p>
+        <p><i class="icon-twitter icon-4x pull-right"></i>You have to sign in before you can use twXplorer. You do this using OAuth, which is an authentication protocol that allows users to approve applications to act on their behalf without sharing their password. We only request read access (as opposed to read/write access). The application can only read data and has no ability to update any user's information.</p>
 
-        <p>The Twitter API is rate-limited, only allowing clients to make a limited number of calls per hour.  Unauthenticated calls are measured against the public facing IP of the server or device making the request.  Authenticated calls are measured against the access token used in the request.  Requiring the user to sign-in means each user will have a unique access token.  Therefore, the rate limits are applied per-user (as opposed to per-application).</p>
+        <p>The Twitter API is rate-limited, only allowing clients to make a limited number of calls per hour. Unauthenticated calls are measured against the public facing IP address of the server or device making the request. Authenticated calls are measured against the access token used in the request. Requiring the user to sign-in means each user will have a unique access token. Therefore, the rate limits are applied per user (as opposed to all twXplorer users).</p>
 
-        <p>Requiring sign in also allows us to save private, per-user data (e.g. saved results).</p>
+        <p>Requiring sign in also allows us to save private, per-user data (e.g. saved results), and to let you to use the Twitter lists feature of twXplorer.</p>
 
-        <h4>Search</h4>
+        <h4>Search queries</h4>
 
-        <p><img class="round pull-right" src="{{ STATIC_URL }}img/twx_screen1.png">This page allows you to retrieve tweets by query.  You enter a query in the search box, pick a language, and hit the search button.  We contact Twitter and attempt to get the 500 most recent tweets that match the query.  Then we analyze them and display the results.</p>
+        <p><img class="round pull-right" src="{{ STATIC_URL }}img/twx_screen1.png">Enter a query in the search box, pick a language, and hit the search button. To provide a relatively swift response, and comply with Twitter's API limits, twXplorer finds the 500 most recent tweets that include your search terms.  We analyze them and display the results.  We do not display duplicate "new style" retweets, though the terms in retweets are counted in the bar graph that twXplorer displays.  If twXplorer reports finding 400 tweets, it means it found 400 unique tweets–which you can scroll through–and 100 “new style” retweets.</p>
 
-        <p>The language selection will restrict the search to tweets in a given language.  Twitter offers "best-effort" language detection, which is very good but not perfect.</p>
+        <p>The language selection will restrict the search to tweets in a given language. Twitter offers "best-effort" language detection, which is very good but not perfect.</p>
 
-        <p>The Search API is not an exhaustive source of Tweets. Not all Tweets are indexed or made available.</p>
+        <h4>Search results</h4>
+
+        <p><img class="round pull-right" src="{{ STATIC_URL }}img/twx_screen2.png">For any search terms you enter into twXplorer, you get four different ways to see your search results:</p>
+
+        <ul>    
+        	<li>Up to 500 recent tweets containing the terms you entered.</li>
+            <li>In tweets that include your search terms, a bar graph showing the most popular other words that appear.</li>
+            <li>The most popular hashtags included in tweets containing your search terms</li>
+            <li>The most popular links in tweets containing your search terms.</li>
+        </ul>
+        <p>TwXplorer excludes common words like “the”. Then it looks not only for single words, but also user mentions (such as @KnightLab) and hashtag text (#chicago counts as “chicago”). It also looks for “bigrams” (two-word phrases) that show up more than once. If a bigram is common (say, “white house”), twXplorer doesn't count them again as separate terms.  TwXplorer groups terms together when they have a common stem (“look,” “looks” and “looking” are counted as the same term).</p>
+
+        <p>You can click on any item in a histogram, and it will appear above the histograms as a filter item. The list of tweets and histograms always reflects the current filter state. The filters are connected through an "and" Boolean search.  For example, if you have filtered separately by "chicago" and "bulls", the displayed results will reflect only those tweets that contain both "chicago" and "bulls".</p>
+
+        <p>You can remove the filter by clicking on the "x" next to it at the top of the page.</p>
+
+        <p>The Twitter Search API is not an exhaustive source of Tweets. Not all Tweets are indexed or made available.</p>
+
 
         <h4>Lists</h4>
 
-        <p>This page allows you to retrieve tweets by lists.  The primary dropdown menu contains all the lists the authenticating user subscribes to, including their own (maximum of 100).  You select a list, pick a language, and hit the search button.  We contact Twitter and attempt to get the 500 most recent tweets authored by members of the selected list.  Then we analyze them and display the results.</p>
+        <p>This search provides information about tweets on Twitter lists you have created or subscribed to (maximum of 100).  Select a list, pick a language, and hit the search button. We contact Twitter and request the 500 most recent tweets authored by members of the selected list. Then we analyze them and display the results.</p>
+        
+        <p>For lists, the language you specify doesn't change what tweets Twitter returns to us. However, the language you specify gives TwXplorer a clue about which common words to ignore when producing the term histogram</p>
 
-        <h4>Analysis</h4>
 
-        <p><img class="round pull-right" src="{{ STATIC_URL }}img/twx_screen2.png">We take each tweet and break it down into a list of terms, hashtags, and links.  Then, we count the number of tweets that contain each term, hashtag, and link.</p>
+        <h4>Snapshots</h4>
 
-        <p>Terms include unigrams (words), bigrams (two-word phrases), user mentions (e.g. @KnightLab), and hashtag text (e.g. "#chicago" counts as "chicago").   All terms except user mentions are stoplisted (ignore common words like "the") and stemmed (e.g. "look", "looking", and "looks" are counted as the same term).</p>
+        <p><img class="round pull-right" src="{{ STATIC_URL }}img/twx_screen3.png">You can save a set of results by clicking on "Save Snapshot." You can view everything you've saved by clicking on "saved snapshots."</p>
 
-        <p>We throw out bigrams that only appear once.  Then, we look at the unigrams.  We do not count unigrams if they are part of a valid bigram.  For example, if a tweet contains the valid bigram "white house", then "white" and house" will not be counted separately as invidivual terms.</p>
+        <p>The snapshots are displayed by the date/time when you saved them and grouped by query or list (depending on how you obtained the results). Click on any snapshot to review it. You can explore a saved snapshot in the same way you explore live search results; you can drill down by clicking on any term.</p>
 
-        <h4>Results</h4>
-
-        <p>We display the tweets that were found and the resulting histograms of terms, hashtags, and links.</p> 
-
-        <p>We try to only show unique tweets by hiding retweets.  However, the number next to each item in the histogram indicates the number of tweets in the set that contain that item, and this number will include any retweets that were actually returned by Twitter.</p>
-
-        <p>You can click on any item in a histogram, and it will appear above the histograms as a filter item.  The list of tweets and histograms always reflects the current filter state.  The filters are AND-ed together.  For example, if you have filtered separately by "chicago" and "bulls", the displayed results will reflect only those tweets that contain both "chicago" and "bulls".</p>
-
-        <p>You can remove the filter by clicking on its "x".</p>
-
-        <h4>History</h4>
-
-        <p><img class="round pull-right" src="{{ STATIC_URL }}img/twx_screen3.png">You can save a set of results by clicking on the "Save Results" button.  You can view all of your saved result sets on the History page.</p>
-
-        <p>The result sets displayed by the date/time when you saved them and grouped by query or list (depending on how you obtained the results).  Click on any result set to review it.</p>
-
-        <p>A result set can be deleted by checking the box next to it and clicking the "Delete Selected Results" button.</p>
+        <p>A snapshot can be deleted by checking the box next to it and clicking the "Delete selected snapshots" button.
+        </p>
         </div>
     </div>
 </div>
