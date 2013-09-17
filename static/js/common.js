@@ -148,15 +148,22 @@ function initialize_loaders() {
     _HashtagLoader = new Loader($('#hashtags'), 20,
         function(hashtag_counts, callback) {
             var hashtag, count, html = '';
+            var max_count =  _HashtagLoader.data[0][1];
             
             if(hashtag_counts.length) {
                 for(var i = 0; i < hashtag_counts.length; i++) {                   
                     hashtag = hashtag_counts[i][0];
                     count = hashtag_counts[i][1];
+                    var pct = (count * 100)/max_count;
             
                     html += ''
-                        + '<li><span class="count">'+count+'</span><a href="javascript:void(0);" onclick="add_filter(\''+hashtag+'\')">'
-                        + hashtag+'</a></li>';
+                        + '<li class="term" onclick="add_filter(\''+hashtag+'\');">'
+                        + '<span class="count">'+count+'</span>'
+                        + '<div class="inner">'
+                        + '<a>'+hashtag+'</a>'
+                        + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
+                        + '</div>'
+                        + '</li>';     
                 }  
             } else {
                 html = '<p class="msg">no hashtags found</p>';
