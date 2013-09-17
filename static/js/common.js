@@ -55,6 +55,27 @@ function do_ajax(url, data, on_error, on_success) {
     });
 }
 
+function add_filter(stem) {
+    _filter.push(stem);
+    filter_results(_session._id);
+}
+
+function remove_filter(stem) {
+    var stem_index = $.inArray(stem, _filter);
+    if(stem_index > -1) {
+        _filter.splice(stem_index, 1);
+    }
+    filter_results(_session._id);
+}
+
+function clear_filters() {
+    if(_filter.length > 0){
+        _filter = []
+        filter_results(_session._id);
+    }
+}
+
+
 function initialize_loaders() {
     //
     // Loaders
