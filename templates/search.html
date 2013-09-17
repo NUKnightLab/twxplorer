@@ -207,14 +207,14 @@ $(function() {
             },
             function(data) {   
                 _filter = [];
-                if (true) { // data.stem_counts
+                if (data.session.tweet_count > 0) {  
                   filter_results(data.session._id, function() {
                       hide_progress();
                   });
 
                   $('#save').show();
                 } else {
-                  console.log("nothing to see, move along...");
+                  show_warning("No tweets found matching '" + query + "'.")
                   hide_progress();
                 }
             }

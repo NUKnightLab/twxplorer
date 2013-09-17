@@ -20,6 +20,18 @@ function show_confirm(msg, callback) {
     $('#confirm_modal').modal('show');
 }
 
+function show_warning(message) {
+    if($('#warning_alert').length) {
+        $('#warning_alert').html(message);
+    } else {        
+        $('#control_bar').after(
+            '<div id="warning_alert" class="alert">'
+            + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
+            + '<span class="error-msg">'+message+'</span></div>'
+        );
+    }
+}
+
 function show_error(error) {      
     if($('#error_alert').length) {
         $('#error_alert .error-msg').html(error);
@@ -34,6 +46,7 @@ function show_error(error) {
 
 function hide_error() {
     $('#error_alert').remove();
+    $('#warning_alert').remove();
 }
 
 function do_ajax(url, data, on_error, on_success) {

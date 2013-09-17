@@ -205,11 +205,16 @@ $(function() {
             },
             function(data) {   
                 _filter = [];
-                filter_results(data.session._id, function() {
-                    hide_progress();
-                });
-                
-                $('#save').show();
+                if (data.session.tweet_count > 0) {  
+                  filter_results(data.session._id, function() {
+                      hide_progress();
+                  });
+
+                  $('#save').show();
+                } else {
+                  show_warning("No tweets found for '" + $('#list option:selected').text() + "'.")
+                  hide_progress();
+                }
             }
         );
     });

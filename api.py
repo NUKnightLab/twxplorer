@@ -494,10 +494,13 @@ def analyze():
             session_r['stem_map'][' '.join(stem)] = \
                 [' '.join(k) for k, v in c.most_common()]        
         
+        # Save tweets
+        if tweet_list:
+            _tweets.insert(tweet_list)
+
+        session_r['tweet_count'] = len(tweet_list)
         _session.save(session_r)
         
-        # Save tweets
-        _tweets.insert(tweet_list)   
         
         return _jsonify(session=session_r)
     except tweepy.TweepError, e:
