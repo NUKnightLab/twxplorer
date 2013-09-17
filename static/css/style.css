@@ -100,9 +100,9 @@ ul.inline.breadcrumbs li {
 .histogram-container .inner a:hover,
 .histogram-container .inner:hover a{text-decoration: underline;}
 
-#terms {height: 360px;overflow: auto;font-size: 0.9em;}
-#terms .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer; clear: both;}
-#terms label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
+.histogram-container {height: 360px;overflow: auto;font-size: 0.9em;}
+.histogram-container  .term {width: 100%;margin: 0 0 0.75em 0;padding: 0;cursor: pointer; clear: both;}
+.histogram-container label {font-size: 0.9em;padding: 0 0 0 0;margin: 0 0 0 0;}
 
 .bar {background: #e35a25; height: 30px;
     margin: -26px 0 -9px -7px;
@@ -113,13 +113,16 @@ ul.inline.breadcrumbs li {
 
 #terms,
 #hashtags,
-#urls {
+#urls,
+.histogram-container  {
+    margin-bottom: 0;
     font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
 }  
 
 #terms .count,
 #hashtags .count,
-#urls .count {
+#urls .count,
+.histogram-container .count {
     clear: both; 
     background-color: #EEEEEE;
     border-radius: 2px 2px 2px 2px;
@@ -135,6 +138,7 @@ ul.inline.breadcrumbs li {
 #terms a,
 #hashtags a,
 #urls a,
+.histogram-container a,
 a.internal {
     color: #ca4d1d;
 }  
@@ -144,10 +148,7 @@ a.internal {
 #control_bar .form-inline select {
     font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
 }
-#hashtags li a {
-    display: block;
-    margin: 6px 0 0;
-}
+
 form .dropdown {
     padding-top: 4px;
     font-size: .8em;
@@ -174,6 +175,7 @@ form .dropdown {
     padding: 0 0 0 0;
     white-space: nowrap;
 }
+
 .round {
     border: 1px solid #DDDDDD;
     border-radius: 100% 100% 100% 100%;
@@ -196,7 +198,7 @@ form .dropdown {
 
 #urls a:first-child {padding-right: 10px;} 
  
-#tweets {height: 614px;overflow: auto;} 
+#tweets {height: 582px;overflow: auto;} 
 #tweets iframe {
     width: 97% !important;
     min-width: 205px !important;
