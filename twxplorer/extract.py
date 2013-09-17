@@ -6,6 +6,7 @@ import HTMLParser
 import nltk
 from nltk.corpus import stopwords
 from nltk import SnowballStemmer
+import unicodedata
 
 # available languages (languages, ISO 639-1 code)
 # ref: http://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
@@ -70,8 +71,8 @@ def get_stemmer(language='en'):
     
 def normalize(s):
     """Return normalized version of string."""
-    s = s.encode('ascii', 'replace').replace('?', '').lower()
-    
+    # s = s.encode('ascii', 'replace').replace('?', '').lower() # doesn't treat non-English very well.
+    s = filter(lambda x: unicodedata.category(x)[0] != 'C',s.lower()) # assumes we're not dealing with any CJKV languages
     norm = ''
     for item in _re_entity.split(s):
         if _re_entity.match(item):
@@ -100,13 +101,20 @@ def tokenize(s):
             tokens.append(items)    
     return tokens
 
+def is_all_numbers_and_punctuation_in_unicode(token):
+    # the _re_stoplist regex doesn't take unicode into account
+    categories = set()
+    for x in token:
+        categories.add(unicodedata.category(x)[0])
+    return (not "L" in categories)
+    
 def stoplist(token, stopwords):
     """Return True if token should be stoplisted."""
-    return _re_stoplist.match(token) or token in stopwords
+    return len(token) <= 1 or _re_stoplist.match(token) or token in stopwords or is_all_numbers_and_punctuation_in_unicode(token)
     
 def stoplist_iter(it, stopwords):
     """Return True if any element should be stoplisted."""
-    return any(map(lambda x: _re_stoplist.match(x) or x in stopwords, it))
+    return any(map(lambda x: stoplist(x, stopwords), it))
         
 def stems_from_grams(grams, stemmer):
     """Get list of stems from grams using stemmer"""
