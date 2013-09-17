@@ -75,6 +75,38 @@ function clear_filters() {
     }
 }
 
+function show_filter() {   
+    var s = '';
+    
+    if(_filter.length > 0) {
+       s = '<li class="blank">&nbsp; Filters: </li>';
+    }
+    for(var i = 0; i < _filter.length; i++) {
+        s += '<li>'+get_term(_filter[i])
+            + '<button class="close" onclick="remove_filter(\''+_filter[i]+'\');">&times;</button>'
+            + '</li>';      
+    }
+    
+    $('#filter_list').html(s).show();
+}
+
+// Get the term to represent filter item in UI
+function get_term(s) {
+    if(s[0] == '#') {
+        return s;
+    }   
+    if(s in _url_map) {
+        return _url_map[s];  
+    }
+    if(s in _session.stem_map) { 
+        if(_session.stem_map[s].length > 1) {
+            return _session.stem_map[s][0]+', ...';
+        } 
+        return _session.stem_map[s];
+    }
+    return s;
+}
+
 
 function initialize_loaders() {
     //
