@@ -161,9 +161,9 @@ function initialize_loaders() {
     _HashtagLoader = new Loader($('#hashtags'), 20,
         function(hashtag_counts, callback) {
             var hashtag, count, html = '';
-            var max_count =  _HashtagLoader.data[0][1];
             
             if(hashtag_counts.length) {
+                var max_count =  _HashtagLoader.data[0][1];
                 for(var i = 0; i < hashtag_counts.length; i++) {                   
                     hashtag = hashtag_counts[i][0];
                     count = hashtag_counts[i][1];
