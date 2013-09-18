@@ -30,9 +30,17 @@ stopword_languages = [
 stopword_sets = {}  # language code -> set()
 stemmers = {}       # language code -> stemmer
 
+bonus_stopwords = {
+    'fr': ['les']
+}
+
 for (lang_name, lang_code) in stopword_languages:
     stopword_sets[lang_code] = set(stopwords.words(lang_name))  
-    stopword_sets[lang_code].update(['via', 'rt', 'thru'])   
+    stopword_sets[lang_code].update(['via', 'rt', 'thru'])
+    try:
+        stopword_sets[lang_code].update(bonus_stopwords[lang_code])
+    except KeyError:
+        pass
     stemmers[lang_code] = SnowballStemmer(lang_name)
 
 
