@@ -136,7 +136,7 @@ function initialize_loaders() {
                 var pct = (count * 100)/max_count;
             
                 term_list = _session.stem_map[stem];
-                if(term_list.length > 1) {                
+                if(term_list && term_list.length > 1) {                
                     anchor = '<a data-toggle="tooltip" data-placement="right" data-title="'+term_list.join(', ')+'" data-trigger="hover">';
                 } else {
                     anchor = '<a>';
