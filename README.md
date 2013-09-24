@@ -23,12 +23,7 @@ Install [MongoDB](http://www.mongodb.org/downloads) and start the Mongo server b
     pip install -r requirements.txt
     
     # Download nltk stopwords (if necessary)
-    # The commands below will open up the NLTK Downloader application.
-    # On the 'Corpora' tab, select 'stopwords' and click 'Download'.
-    # When finished, quit the application.
-    python
-    >> import nltk
-    >> nltk.download()
+    python -m nltk.downloader stopwords
     
     # Start the Flask development server
     python api.py
