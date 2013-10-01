@@ -42,6 +42,8 @@ CONTROL BAR AREA
 #query {font-size: 0.9em;}
 #list {font-size: 0.9em;width: 340px;}
 #language {font-size: 0.9em;width: 130px;}
+
+
 /*
 ALERTS/MODALS
 */
@@ -79,6 +81,18 @@ FILTERS
 button#save.btn {
     padding-top: 0;
 }
+
+button#share.btn {
+    padding-top: 0;
+}
+
+/*
+#share_popover {max-width: 442px;}
+#share_url {width: 400px;}
+*/
+#share button,label,input[type=text],.btn {font-size: 0.9em;}
+#share_popover button {margin-right: 10px;}
+
 .breadcrumbs,
 .breadcrumbs .btn {
     font-family: "Apres RE","Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -212,6 +226,8 @@ HISTORY
 */
 .accordion-heading input[type=checkbox] {float: right;margin: 14px 15px 10px 10px;}
 .accordion-inner input[type=checkbox] {float: right;margin: 6px 0 10px 10px;}
+.accordion-inner i {margin-left: 4px;}
+
 #history_delete {float: right;}
 
 

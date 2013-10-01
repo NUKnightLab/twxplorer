@@ -45,9 +45,11 @@
                     <div class="accordion-row">       
                         <input type="checkbox" class="session" value="{{ sess._id }}" />
             {% if group.query %}
-                        <p><a href='/search/{{ sess._id }}/'>{{ sess.dt }}</a></p>
+                        <p><a href='/search/{{ sess._id }}/'>{{ sess.dt }}</a>
+                        {% if sess.shared %}<i class="icon-globe"></i>{% endif %}</p>
             {% else %}
-                        <p><a href='/lists/{{ sess._id }}/'>{{ sess.dt }}</a></p>
+                        <p><a href='/lists/{{ sess._id }}/'>{{ sess.dt }}</a>
+                        {% if sess.shared %}<i class="icon-globe"></i>{% endif %}</p>
             {% endif %}
                     </div>
         {% endfor %}

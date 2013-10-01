@@ -15,6 +15,7 @@ import bson
 import tweepy
 import pymongo
 import urllib2
+import urllib
 import lxml.html
 import nltk
 
@@ -182,6 +183,42 @@ def logout():
 #
 # Main views
 #
+    
+def _require_session_owned(session_id):
+    """
+    Require that the session is owned by the logged in user
+    """
+    session_r = _session.find_one({'_id': bson.ObjectId(session_id)})
+    if not session_r:
+        raise Exception('Session not found')    
+
+    search_r = _search.find_one({'_id': bson.ObjectId(session_r['search_id'])})
+    if not search_r:
+        raise Exception('Search not found')
+ 
+    if search_r['username'] != session.get('username', ''):
+        raise Exception('You do not have permission to access this snapshot')
+        
+    return (search_r, session_r)
+    
+def _require_session_access(session_id):
+    """
+    Require that the session is shared or owned by the logged in user
+    """
+    session_r = _session.find_one({'_id': bson.ObjectId(session_id)})
+    if not session_r:
+        raise Exception('Session not found')    
+
+    search_r = _search.find_one({'_id': bson.ObjectId(session_r['search_id'])})
+    if not search_r:
+        raise Exception('Search not found')
+                
+    if not session_r.get('shared', 0):
+        if search_r['username'] != session.get('username', ''):
+            raise Exception('You do not have permission to view this snapshot')
+        
+    return search_r['username']
+        
 
 def _get_list_map():
     """
@@ -194,7 +231,7 @@ def _get_list_map():
             list_map[r['id_str']] = r['full_name']
     return list_map
     
-    
+  
 def _get_saved_results(params=None):
     """
     Get saved results matching params, grouped by search
@@ -219,7 +256,7 @@ def _get_saved_results(params=None):
                  
         session_cursor = _session.find(
             {'search_id': search_r['_id'], 'saved': 1},
-            fields=['_id', 'dt'],
+            fields=['_id', 'dt', 'shared'],
             sort=[('dt', pymongo.DESCENDING)]
         )
         for session_r in session_cursor:
@@ -237,8 +274,28 @@ def _get_saved_results(params=None):
                 search_by_query.append(search_r)
    
     return (search_by_query, search_by_list)
-    
-    
+
+
+def _shorten_url(url):
+    """Shorten an URL."""    
+    if (settings.BITLY_USERNAME != False) & (settings.BITLY_APIKEY != False):
+        params = {
+            'login': settings.BITLY_USERNAME,
+            'apiKey': settings.BITLY_APIKEY,
+            'longUrl': url,
+            'format': 'json'
+        }
+        if settings.BITLY_DOMAIN  : 
+            params['domain'] = settings.BITLY_DOMAIN   
+        bitly_call = 'https://api-ssl.bitly.com/v3/shorten?' + urllib.urlencode(params);        
+        response = json.loads(urllib2.urlopen(urllib2.Request(bitly_call)).read())
+        
+        if response['status_code'] == 200:
+            url = response['data']['url']
+        else:
+            print "bitly error: %s" % response['status_txt']  
+    return url
+        
 @app.route("/about/", methods=['GET', 'POST'])
 def about(name=''):
     """
@@ -256,65 +313,90 @@ def index(name=''):
     except Exception, e:
         traceback.print_exc()
         return render_template('index.html', error=str(e))
-        
+ 
+      
 @app.route("/search/", methods=['GET', 'POST'])
 @app.route("/search/<session_id>/", methods=['GET', 'POST'])
-@login_required
+# commented out to allow shared snapshots: @login_required
 def search(session_id=''):
     """
     Search by query page
     """
     try:
-        saved_results, unused = _get_saved_results({'list_id': {'$exists': False}})
+        logged_in = is_logged_in()
+        saved_results = []
+        snapshot_owner = ''
+        
+        if logged_in:     
+            saved_results, unused = _get_saved_results(
+                {'list_id': {'$exists': False}})
 
+        if session_id:
+            snapshot_owner = _require_session_access(session_id)
+        elif not logged_in:
+            return redirect(url_for('index'))
+        
         return render_template('search.html', session_id=session_id,
+            snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results)
     except Exception, e:
         traceback.print_exc()
         return render_template('search.html', session_id=session_id,
-            languages=extract.stopword_languages, error=str(e))
+            snapshot_owner=snapshot_owner,
+            languages=extract.stopword_languages, saved_results=saved_results,
+            error=str(e))
     
        
 @app.route("/lists/", methods=['GET', 'POST'])
 @app.route("/lists/<session_id>/", methods=['GET', 'POST'])
-@login_required
+# commented out to allow shared snapshots: @login_required
 def lists(session_id=''):
     """
     Search by list page
     """
     try:
-        unused, saved_results = _get_saved_results({'list_id': {'$exists': True}})        
+        logged_in = is_logged_in()
+        saved_results = []
 
-        username = session.get('username')
-        delta = datetime.timedelta(minutes=15)
-        refresh = False
-        
-        list_r = _list.find_one({'username': username})
-        if not list_r:
-            list_r = {'username': username}
-            refresh = True
-        elif (list_r['dt'] + delta) < datetime.datetime.now():
-            refresh = True
-        elif request.args.get('refresh'):
-            refresh = True
-        
-        if refresh:
-            api = tweepy.API(get_oauth())
+        if logged_in:
+            unused, saved_results = _get_saved_results(
+                {'list_id': {'$exists': True}})        
 
-            lists = []
-            for r in api.lists_all(screen_name=username):
-                lists.append({
-                    'id_str': r.id_str,
-                    'slug': r.slug,
-                    'name': r.name,
-                    'full_name': r.full_name
-                })
+            username = session.get('username')
+            delta = datetime.timedelta(minutes=15)
+            refresh = False
+        
+            list_r = _list.find_one({'username': username})
+            if not list_r:
+                list_r = {'username': username}
+                refresh = True
+            elif (list_r['dt'] + delta) < datetime.datetime.now():
+                refresh = True
+            elif request.args.get('refresh'):
+                refresh = True
+        
+            if refresh:
+                api = tweepy.API(get_oauth())
+
+                lists = []
+                for r in api.lists_all(screen_name=username):
+                    lists.append({
+                        'id_str': r.id_str,
+                        'slug': r.slug,
+                        'name': r.name,
+                        'full_name': r.full_name
+                    })
             
-            list_r['dt'] = datetime.datetime.now()
-            list_r['lists'] = lists       
-            list_r['_id'] = _list.save(list_r, manipulate=True)
+                list_r['dt'] = datetime.datetime.now()
+                list_r['lists'] = lists       
+                list_r['_id'] = _list.save(list_r, manipulate=True)
     
-        list_map = _get_list_map()
+            list_map = _get_list_map()
+
+        if session_id:
+            _require_session_access(session_id)
+        elif not logged_in:
+            return redirect(url_for('index'))
 
         # DEBUG
         #list_r['lists'] = []
@@ -512,7 +594,7 @@ def analyze():
 
                     
 @app.route("/filter/<session_id>/", methods=['GET', 'POST'])
-@login_required
+# commented out to allow shared snapshots: @login_required
 def filter(session_id):
     """
     Get histogram and tweets
@@ -522,6 +604,8 @@ def filter(session_id):
         else, it is a stem
     """
     try:
+        _require_session_access(session_id)
+
         session_r = _session.find_one(
             {'_id': bson.ObjectId(session_id)})
         if not session_r:
@@ -621,25 +705,76 @@ def filter(session_id):
         traceback.print_exc()
         return _jsonify(error=str(e))
   
-@app.route("/history/save/<session_id>/", methods=['GET', 'POST'])
+ 
+@app.route("/history/update/<session_id>/", methods=['GET', 'POST'])
 @login_required
-def history_save(session_id):
+def history_update(session_id):
     """
-    Mark search session as saved
+    Update search session
     """
     try:
-        session_r = _session.find_one(
-            {'_id': bson.ObjectId(session_id)})
-        if not session_r:
-            raise Exception('Session not found')
+        search_r, session_r = _require_session_owned(session_id)
         
+        params = {}        
+        for k in ['saved', 'shared']:
+            if k in request.args:
+                params[k] = int(request.args.get(k))
+                      
+        if params.get('shared') and not session_r.get('share_url'):
+            if search_r.get('query'):
+                params['share_url'] = _shorten_url('http://%s%s' % ( \
+                    request.host,
+                    url_for('search', session_id=str(session_r['_id']))
+                ))
+            else:
+                params['share_url'] = _shorten_url('http://%s%s' % ( \
+                    request.host,
+                    url_for('lists', session_id=str(session_r['_id']))
+                ))
+                
         _session.update({'_id': bson.ObjectId(session_id)}, 
-            {'$set': {'saved': 1}}, multi=False)
+            {'$set': params}, multi=False)
                     
-        return _jsonify(error='')
+        return _jsonify(**params)
     except Exception, e:
         traceback.print_exc()
         return _jsonify(error=str(e))
+ 
+@app.route("/history/tweet/<session_id>/", methods=['GET', 'POST'])
+def history_tweet(session_id):
+    """
+    Redirect to twitter sharing
+    """    
+    search_r, session_r = _require_session_owned(session_id)
+    
+    if search_r.get('query'):
+        tmpl = 'See what people tweeted about "%s" #twxplorer @KnightLab %s'
+        query = search_r.get('query')
+                      
+        msg = tmpl % (query, session_r['share_url'])
+            
+        n = len(msg)        
+        if n > 140:
+            query = query[:-(n - 140 + 4)]+'...' 
+            msg = tmpl % (query, session_r['share_url'])
+    else: 
+        tmpl = 'See what %s tweeted #twxplorer @KnightLab %s'
+        list_map = _get_list_map()
+        list_name = list_map.get(search_r['list_id']) \
+            or search_r.get('list_name') \
+            or '[unknown]'
+
+        msg = tmpl % (list_name, session_r['share_url'])
+        n = len(msg)        
+        if n > 140:
+            list_name = list_name[:-(n - 140 + 4)]+'...' 
+            msg = tmpl % (list_name, session_r['share_url'])
+            
+    tweetUrl = 'https://twitter.com/share?'+urllib.urlencode({
+        'text': msg, 'url': 'false' })
+        
+    return redirect(tweetUrl)
+      
       
 @app.route("/history/delete/", methods=['GET', 'POST'])
 @login_required
@@ -672,7 +807,7 @@ def history_delete():
 
 
 @app.route("/urls/", methods=['GET', 'POST'])
-@login_required
+# commented out to allow shared snapshots: @login_required
 def urls():
     """
     Get extended info for urls

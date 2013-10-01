@@ -8,8 +8,10 @@
 {% endblock %}
 
 {% block content %}
+
+{% if session.username %}
 <div id='control_bar' class="row-fluid">
-    <div class="container">
+<div class="container">
     <div class="span9">
         <form class="form-inline">
             <input type="text" class="form-control" id="query" value="" size="100" placeholder="Enter your search" />
@@ -28,7 +30,9 @@
                         {{ r.query }}
                         <ul class="unstyled"> 
                             {% for sess in r.sessions %}
-                            <li><a href="/search/{{ sess._id }}/">{{ sess.dt }}</a></li>
+                            <li><a href="/search/{{ sess._id }}/">{{ sess.dt }}</a>
+                            {% if sess.shared %}<i class="icon-globe"></i>{% endif %}
+                            </li>
                         {% endfor %}
                         </ul>
                     </li>
@@ -42,8 +46,9 @@
     </div>
 </div>
 </div>
-  <div id="content" class="container">
+{% endif %}
 
+<div id="content" class="container">
 
 {% if error %}
 <div class="alert alert-danger">
@@ -52,6 +57,13 @@
 </div>
 {% endif %}
 
+{% if not error and snapshot_owner and snapshot_owner != session.username %}
+<div class="alert alert-info">
+    <p>This twXplorer snapshot was shared by @{{ snapshot_owner }}.</p>
+</div>
+{% endif %}
+
+{% if not error %}
 <div class="row-fluid spaced">   
     <div class="span12">
         <ul class="inline breadcrumbs">
@@ -64,12 +76,13 @@
             </li>
             <li><span id="tweet_count"></span></li>
             <li><button type="button" class="btn btn-link" id="save" style="display: none;">Save snapshot</button></li>
+            <li><button type="button" class="btn btn-link" id="share" style="display: none;">Share snapshot</button></li>            
         </ul>
     </div>
 </div>
 
 <div id="main-content" class="row-fluid cover">
-     <div class="span4">
+    <div class="span4">
         <div class="frame-header tweet-header">Recent Tweets</div>
         <div id='tweets'>
            <!-- tweets go here -->
@@ -106,6 +119,10 @@
         </div>
     </div>    
 </div>
+{% endif %}
+
+</div>
+
 {% endblock %}
 
 {% block script %}
@@ -139,24 +156,29 @@ function filter_results(session_id, callback) {
             }
         },
         function(data) {   
-            console.log("filter done, data stashed");
-            window.stash = data
             _session = data.session;   
             
             $('#query').val('');
+            $('#language').val(data.search.language);
+
             $('#main-content').removeClass('cover');
             if(_session.saved) {
                 $('#search_label').html('Saved snapshot');
             } else {
                 $('#search_label').html('Search');
             }
-            $('#current_term').html(data.search.query);
             $('#timestamp').html('on '
                 + Date.parse(_session.dt.split('.')[0]).toString("M/d/yy HH:mm")+':');
-      
-            $('#language').val(data.search.language);
-            $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
+            $('#current_term').html(data.search.query);
+            
+            if('{{ session.username }}' == data.search.username) {
+                $('#share').show();
+            } else {
+                $('#share').hide();
+            }
                                  
+            $('#tweet_count').html('('+data.tweets.length+' tweets, '+data.retweets+' retweets)');
+                                            
             _TermsLoader.set_data(data.stem_counts).load_more();
             _HashtagLoader.set_data(data.hashtag_counts).load_more();
             _TweetsLoader.set_data(data.tweets).load_more();            
@@ -172,7 +194,7 @@ function filter_results(session_id, callback) {
 //
 // on load
 //
-$(function() {    
+$(function() {           
     $('#query')
         .keypress(function(event) {
             if(event.which == 13) {
@@ -195,7 +217,7 @@ $(function() {
         if(!query) {
             show_error('You must enter a query');
             return;
-        } 
+        }
     
         show_progress('Searching Twitter');
     
@@ -220,31 +242,68 @@ $(function() {
             }
         );
     });
- 
-    $('#save').click(function(event) {
-        hide_error();
-        
-        show_progress('Saving results');
-        
-        do_ajax('/history/save/'+_session._id+'/', 
-            {},
-            function(error) {
-                show_error('Error saving results ('+error+')');
-                hide_progress();
-             },
-            function(data) {  
-                _session.saved = 1; 
-                hide_progress();
-                $('#save').hide();
-            }
-        );
+         
+    $('#share')
+        .popover({
+            trigger: 'manual',
+            placement: 'bottom',
+            html: true,
+            title: 'Share Snapshot<a class="close" href="#">&times;</a>',
+            template: ''
+                + '<div id="share_popover" class="popover">'
+                + '<div class="arrow"></div><div class="popover-inner">'
+                + '<h3 class="popover-title"></h3><div class="popover-content"><p></p></div>'
+                + '</div></div>',        
+            content: function() {
+                return ''
+                    + '<label>Link</label>'
+                    + '<input id="share_url" type="text" value="">'
+                    + '<button id="share_tweet" class="btn btn-default" onclick="tweet_snapshot();"><img src="{{ STATIC_URL }}img/bird_blue_16.png" /> Tweet</button>'
+                    + '<button id="unshare" class="btn btn-default" onclick="unshare_snapshot();">Unshare</button>';
+            }  
+        })
+        .click(function(e) {
+            if($('#share_popover').is(':visible')) {
+                $('#share').popover('hide');
+            } else if(_session.saved && _session.shared) {
+                $('#share').popover('show');
+                $('#share_url').val(_session.share_url);                
+            } else {
+                show_progress('Sharing snapshot');
+
+                do_ajax('/history/update/'+_session._id+'/', 
+                    {saved: 1, shared: 1},
+                    function(error) {
+                        show_error('Error sharing snapshot ('+error+')');
+                        hide_progress();
+                    },
+                    function(data) {  
+                        $.extend(_session, data);
+                        hide_progress();
+                        $('#save').hide();
+
+                        $('#share').popover('show');
+                        $('#share_url').val(_session.share_url);    
+                            
+                    }
+                );
+            } 
+    
+            return false;
+        });
+
+    $(document).click(function (e) {
+        if(($('.popover').has(e.target).length == 0) || $(e.target).is('.close')) {
+            $('#share').popover('hide');
+        }
     });
        
-    initialize_loaders();
+    initialize();
+    
     //
     // LOAD SESSION?
     //
-{% if session_id %}
+{% if session_id and not error %}
     filter_results('{{ session_id }}');
 {% endif %}
 

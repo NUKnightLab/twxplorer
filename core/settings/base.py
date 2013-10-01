@@ -8,3 +8,5 @@ PROJECT_ROOT = dirname(CORE_ROOT)
 
 # Maximum number of tweets to retrieve per search session
 TWITTER_SEARCH_LIMIT = 500
+
+

@@ -1,7 +1,25 @@
 // utility.js
 //
 
+function show_error(error) {      
+    if($('#error_alert').length) {
+        $('#error_alert .error-msg').html(error);
+    } else {        
+        $('#control_bar').after(
+            '<div id="error_alert" class="alert alert-danger">'
+            + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
+            + '<span class="error-msg">'+error+'</span></div>'
+        );
+    }
+}
+
+function hide_error() {
+    $('#error_alert').remove();
+    $('#warning_alert').remove();
+}
+
 function show_progress(msg) {
+    hide_error();
     $('#progress_msg').html(msg);
     $('#progress_modal').modal('show');
 }
@@ -30,23 +48,6 @@ function show_warning(message) {
             + '<span class="error-msg">'+message+'</span></div>'
         );
     }
-}
-
-function show_error(error) {      
-    if($('#error_alert').length) {
-        $('#error_alert .error-msg').html(error);
-    } else {        
-        $('#control_bar').after(
-            '<div id="error_alert" class="alert alert-danger">'
-            + '<button type="button" class="close" data-dismiss="alert">&times;</button>'
-            + '<span class="error-msg">'+error+'</span></div>'
-        );
-    }
-}
-
-function hide_error() {
-    $('#error_alert').remove();
-    $('#warning_alert').remove();
 }
 
 function do_ajax(url, data, on_error, on_success) {
@@ -120,8 +121,51 @@ function get_term(s) {
     return s;
 }
 
+function unshare_snapshot() {
+    $('#share').popover('hide');    
+ 
+    show_progress('Unsharing snapshot');
+   
+    do_ajax('/history/update/'+_session._id+'/', 
+        {shared: 0},
+        function(error) {
+            show_error('Error unsharing snapshot ('+error+')');
+            hide_progress();
+        },
+        function(data) {  
+            _session.shared = 0;
+            hide_progress();
+        }
+    );        
+}
 
-function initialize_loaders() {
+function tweet_snapshot() {
+    document.location.href = "/history/tweet/"+_session._id+'/';
+}
+
+function initialize() {
+
+    //
+    // #save handler
+    //
+    $('#save').click(function(event) {
+        show_progress('Saving snapshot');
+        
+        do_ajax('/history/update/'+_session._id+'/', 
+            {saved: 1},
+            function(error) {
+                show_error('Error saving snapshot ('+error+')');
+                hide_progress();
+             },
+            function(data) {  
+                _session.saved = 1; 
+                hide_progress();
+                $('#save').hide();
+            }
+        );
+    });
+    
+
     //
     // Loaders
     //
