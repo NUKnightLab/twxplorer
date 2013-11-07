@@ -10,12 +10,12 @@ from .base import *
 # a parallel directory structure next to where you have this code checked out such that the
 # secrets path defined below is a valid directory path. 
 # see https://dev.twitter.com/apps to create an app that you can use for Twxplorer development
-secrets_path = os.path.normpath(os.path.join(PROJECT_ROOT, '../secrets/twxplorer/loc'))
-sys.path.append(secrets_path)
-from secrets import * 
+# secrets_path = os.path.normpath(os.path.join(PROJECT_ROOT, '../secrets/twxplorer/loc'))
+# sys.path.append(secrets_path)
+# from secrets import * 
 # or instead of importing from secrets, uncomment these lines and provide appropriate values
-# TWITTER_CONSUMER_KEY = 'consumer key'
-# TWITTER_CONSUMER_SECRET = 'consumer secret'
+#TWITTER_CONSUMER_KEY = ''
+#TWITTER_CONSUMER_SECRET = ''
 
 # Set static URL
 STATIC_URL = '/static/'
@@ -32,4 +32,4 @@ MONGODB_NAME = 'twxplorer'
 # see http://flask.pocoo.org/docs/config/ for more.
 # Twxplorer has no special requirements for what goes in this file, but Flask will want you to have a SECRET_KEY
 # and you may want to set the DEBUG flag to True
-os.environ['FLASK_CONFIG_MODULE'] = os.path.join(secrets_path, 'flask_config.py')
+os.environ['FLASK_CONFIG_MODULE'] = os.path.normpath(os.path.join(PROJECT_ROOT, 'conf/loc/flask_config.py'))

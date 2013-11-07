@@ -1,0 +1,2 @@
+DEBUG = True
+SECRET_KEY = 'EDIT_THIS'

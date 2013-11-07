@@ -12,7 +12,7 @@ Install [MongoDB](http://www.mongodb.org/downloads) and start the Mongo server b
     
     # Make a virtual environment for twxplorer
     mkvirtualenv twxplorer
-    
+
     # Change into the twxplorer repository
     cd twxplorer
     
@@ -21,6 +21,9 @@ Install [MongoDB](http://www.mongodb.org/downloads) and start the Mongo server b
     
     # Install requirements
     pip install -r requirements.txt
+
+    # If compilation fails with lxml installation error, install both libxml2-dev and libxslt-dev
+    apt-get install libxml2-dev libxslt-dev
     
     # Download nltk stopwords (if necessary)
     python -m nltk.downloader stopwords
