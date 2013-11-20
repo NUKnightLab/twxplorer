@@ -36,11 +36,14 @@ from twxplorer.connection import _search, _session, _tweets
 
 def clean_database(n_days):
     """Clean database"""
-    print 'Clean database: %d days' % n_days
+    print 'settings: %s' % settings_module
     
+    print 'Clean database: %d days' % n_days    
     dt = datetime.datetime.utcnow() - datetime.timedelta(days=n_days)
     dt_str = dt.isoformat()
-    print 'Removing unsaved data before %s' % dt_str
+    
+    print 'Removing sessions before %s' % dt_str
+    removed = 0
     
     session_list = list(_session.find(
         {'saved': {'$ne': 1}, 'dt': {'$lt': dt_str}},
@@ -53,7 +56,28 @@ def clean_database(n_days):
         # Delete session
         _session.remove({'_id': session_r['_id']})
         
-    print 'Removed %d sessions' % len(session_list)
+        removed += 1        
+        if (removed % 100) == 0:
+            print '...removed %d sessions...' % removed
+    print 'Removed %d sessions' % removed
+    
+    print 'Removing orphan searches'
+    removed = 0
+    
+    search_id_list = _session.distinct('search_id')
+    
+    for search_id in _search.distinct('_id'):
+        if not str(search_id) in search_id_list:
+            _search.remove({'id': search_id})
+            
+            removed += 1           
+            if (removed % 100) == 0:
+                print '...removed %d sessions...' % removed    
+    print 'Removed %d orphan searches' % removed
+      
+#
+# main
+#
               
 class Usage(Exception):
     def __init__(self, msg):
