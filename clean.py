@@ -68,7 +68,7 @@ def clean_database(n_days):
     
     for search_id in _search.distinct('_id'):
         if not str(search_id) in search_id_list:
-            _search.remove({'id': search_id})
+            _search.remove({'_id': search_id})
             
             removed += 1           
             if (removed % 100) == 0:
