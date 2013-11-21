@@ -1,5 +1,5 @@
 '''
-Clean up old data
+Clean up old data.  Be sure to set FLASK_SETTINGS_MODULE environment var.
 
 Usage:
     python <script> [options]
