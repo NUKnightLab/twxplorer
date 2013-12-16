@@ -633,6 +633,9 @@ def analyze():
             tweet['stems'] = [' '.join(x) for x in set(stems)] 
             tweet['stems'].extend([' '.join(x) for x in tweet['stems_2'] if x in bigram_counter])            
             tweet['stems'].extend([' '.join(x) for x in tweet['stems_3'] if x in trigram_counter])
+            
+            del tweet['stems_2']
+            del tweet['stems_3']
                         
         # Update session
         for stem, c in stem_map.iteritems():
