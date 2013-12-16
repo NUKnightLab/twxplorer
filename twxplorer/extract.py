@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sys
 import os
 import re
@@ -51,10 +52,11 @@ _re_stoplist = re.compile(r'^([a-z]|[%s\d]+)$' % string.punctuation)
 _re_url = re.compile(r'http[^ ]+', re.I)
  
 # match clause delimiters
-_re_clause = re.compile(r'[.?!:;,"\r\n]')
+_re_clause = re.compile(r'[.?!:;,"\r\n“”]|#\w{1,15}')
 
-# user mentions and hashtags
-_re_entity = re.compile(r'(@\w{1,15}|#\w{1,15})')
+# user mentions (not hashtags, since now treating as clause delimiter)
+#_re_entity = re.compile(r'(@\w{1,15}|#\w{1,15})')
+_re_entity = re.compile(r'(@\w{1,15})')
 
 # punctuation except '@'
 _re_punctuation = re.compile(r'[%s]+' % string.punctuation.replace('@', ''))
@@ -86,8 +88,9 @@ def normalize(s):
         if _re_entity.match(item):
             if item.startswith('@'):
                 norm += item
-            else:
-                norm += item[1:]
+            # no hashtags anymore
+            #else:
+            #    norm += item[1:]
         else:
             norm += _re_punctuation.sub(' ', item)
 

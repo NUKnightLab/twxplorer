@@ -514,26 +514,72 @@ def analyze():
             
             tweet_list.append(tweet_dict)
 
-        # Process bigrams
-        bigram_counter = Counter()
+        # ------------------------------------------------------------
+        # Process trigrams
+        
+        trigram_counter = Counter()
         
         for tweet in tweet_list:
-            grams = []
-            
+            grams = [] 
+                     
             for tokens in tweet['tokens']:
-                for g in nltk.ngrams(tokens, 2):
+                for g in nltk.ngrams(tokens, 3):
                     if extract.stoplist_iter(g, stopwords):
-                        continue                        
-                    if g[0].startswith('@') or g[1].startswith('@'):
-                        continue                        
+                        continue
+                    if g[0].startswith('@') or g[1].startswith('@') or g[2].startswith('@'):
+                        continue
                     grams.append(g)
-                        
+
             stems = extract.stems_from_grams(grams, stemmer)                                                            
             for s, g in zip(stems, grams):
                 stem_map[s].update([g]) 
                                
-            tweet['stems'] = list(set(stems))
-            bigram_counter.update(tweet['stems'])            
+            tweet['stems_3'] = list(set(stems))
+            trigram_counter.update(tweet['stems_3'])            
+
+        # Ignore trigrams that only appear once
+        for g, n in trigram_counter.items():
+            if n < 2:
+                del trigram_counter[g]
+                del stem_map[g]
+               
+        # ------------------------------------------------------------
+        # Process bigrams
+        
+        bigram_counter = Counter()
+        
+        for tweet in tweet_list:
+            grams = []    
+            stems = []
+                    
+            for tokens in tweet['tokens']:
+                gram_list = nltk.ngrams(tokens, 2)
+                stem_list = extract.stems_from_grams(gram_list, stemmer)
+
+                last_i = len(gram_list) - 1
+                
+                for i, g in enumerate(gram_list):     
+                    if extract.stoplist_iter(g, stopwords):
+                        continue     
+                    if g[0].startswith('@') or g[1].startswith('@'):
+                        continue    
+                    
+                    # Filter by trigrams                              
+                    if i > 0 and \
+                    (stem_list[i-1][0], stem_list[i][0], stem_list[i][1]) in trigram_counter:
+                        continue
+                    if i < last_i and \
+                    (stem_list[i][0], stem_list[i][1], stem_list[i+1][1]) in trigram_counter:
+                        continue
+                    
+                    grams.append(g)
+                    stems.append(stem_list[i])
+                                                      
+            for s, g in zip(stems, grams):
+                stem_map[s].update([g]) 
+                               
+            tweet['stems_2'] = list(set(stems))
+            bigram_counter.update(tweet['stems_2'])            
              
         # Ignore bigrams that only appear once
         for g, n in bigram_counter.items():
@@ -541,35 +587,52 @@ def analyze():
                 del bigram_counter[g]
                 del stem_map[g]
                  
-        # Filter bigrams, process unigrams              
+        # ------------------------------------------------------------
+        # Process unigrams              
+        
         for tweet in tweet_list:
             grams = []
             stems = []
             
-            for tokens in tweet['tokens']:
-                last_i = len(tokens) - 1
-                               
+            for tokens in tweet['tokens']:                               
                 gram_list = nltk.ngrams(tokens, 1)
                 stem_list = extract.stems_from_grams(gram_list, stemmer)
+                
+                last_i = len(gram_list) - 1
                                
                 for i, g in enumerate(gram_list):
                     if extract.stoplist_iter(g, stopwords):
                         continue
+                        
+                    # Filter bigram terms
                     if i > 0 and \
                     (stem_list[i-1][0], stem_list[i][0]) in bigram_counter:
                         continue
                     if i < last_i and \
                     (stem_list[i][0], stem_list[i+1][0]) in bigram_counter:
+                        continue                        
+                        
+                    # Filter trigram terms  
+                    if i > 1 and \
+                    (stem_list[i-2][0], stem_list[i-1][0], stem_list[i][0]) in trigram_counter:
                         continue
-                
+                    if i > 0 and i < last_i and \
+                    (stem_list[i-1][0], stem_list[i][0], stem_list[i+1][0]) in trigram_counter:
+                        continue                    
+                    if i < (last_i - 1) and \
+                    (stem_list[i][0], stem_list[i+1][0], stem_list[i+2][0]) in trigram_counter:
+                        continue
+                                
                     grams.append(g)
                     stems.append(stem_list[i])
                         
             for s, g in zip(stems, grams):
                 stem_map[s].update([g]) 
           
-            tweet['stems'] = [' '.join(x) for x in tweet['stems'] if x in bigram_counter]
-            tweet['stems'].extend([' '.join(x) for x in set(stems)])              
+            # Process stems
+            tweet['stems'] = [' '.join(x) for x in set(stems)] 
+            tweet['stems'].extend([' '.join(x) for x in tweet['stems_2'] if x in bigram_counter])            
+            tweet['stems'].extend([' '.join(x) for x in tweet['stems_3'] if x in trigram_counter])
                         
         # Update session
         for stem, c in stem_map.iteritems():
@@ -582,8 +645,7 @@ def analyze():
 
         session_r['tweet_count'] = len(tweet_list)
         _session.save(session_r)
-        
-        
+                
         return _jsonify(session=session_r)
     except tweepy.TweepError, e:
         traceback.print_exc()

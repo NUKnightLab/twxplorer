@@ -97,7 +97,7 @@ function show_filter() {
     }
     for(var i = 0; i < _filter.length; i++) {
         s += '<li>'+get_term(_filter[i])
-            + '<button class="close" onclick="remove_filter(\''+_filter[i]+'\');">&times;</button>'
+            + '<button class="close" onclick="remove_filter(\''+_filter[i].replace("'", "\\&apos;")+'\');">&times;</button>'
             + '</li>';      
     }
     
@@ -185,9 +185,9 @@ function initialize() {
                 } else {
                     anchor = '<a>';
                 }
-                
+                               
                 html += ''
-                    + '<li class="term" onclick="add_filter(\''+stem+'\');">'
+                    + '<li class="term" onclick="add_filter(\''+stem.replace("'", "\\&apos;")+'\');">'
                     + '<span class="count">'+count+'</span>'
                     + '<div class="inner">'
                     + anchor+get_term(stem, ', ')+'</a>'
