@@ -59,7 +59,7 @@ _re_clause = re.compile(u'[.?!:;,"\r\n“”—]|\s+[\'‘]|[\'’]\s+|#\w{1,15}
 _re_entity = re.compile(r'(@\w{1,15})')
 
 # punctuation except '@'
-_re_punctuation = re.compile(r'[%s]+' % string.punctuation.replace('@', ''))
+_re_punctuation = re.compile(u'[%s’]+' % string.punctuation.replace('@', ''), re.U)
 
 # extra space
 _re_extraspace = re.compile(r'( )+')
