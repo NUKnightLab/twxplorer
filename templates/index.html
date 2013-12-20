@@ -14,6 +14,8 @@
               </p>
             {% else %} 
               <p>You are currently logged in as <b>@{{ session.username }}</b> - <a href="{{ url_for('logout') }}">logout</a></p>
+              <p><a href="/search/" class="btn btn-large btn-success" data-scroll="true">Search Twitter</a></p>
+
             {% endif %}
         </hgroup>
       </div>
