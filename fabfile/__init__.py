@@ -41,6 +41,7 @@ import sys
 import re
 import tempfile
 import importlib
+from collections import defaultdict
 import boto
 from random import choice
 from boto import ec2
@@ -91,7 +92,7 @@ env.app_user = APP_USER
 env.project_name = PROJECT_NAME
 env.python = PYTHON
 env.repo_url = REPO_URL
-env.roledefs = {'app':[], 'work':[], 'pgis':[], 'mongo':[]}
+env.roledefs = defaultdict(list, {'app':[], 'work':[], 'pgis':[], 'mongo':[]})
     
     
 def _get_ec2_con():
@@ -237,13 +238,9 @@ def _setup_env(env_type):
         )
         # unused: env.sites_path = os.path.dirname(env.project_path)
             
-        # roledefs    
-        env.roledefs = {
-            'app': ['localhost'],
-            'work': [],
-            'pgis': ['localhost'],
-            'mongo': []
-        }
+        # roledefs  
+        env.roledefs = defaultdict(list, 
+            {'app': ['localhost'], 'pgis': ['localhost']})
     else:
         env.doit = run      # run/local
 
@@ -254,12 +251,7 @@ def _setup_env(env_type):
         env.project_path = path(env.sites_path, env.project_name)
              
         # roledefs  
-        env.roledefs = {
-            'app':[], 
-            'work':[], 
-            'pgis':[], 
-            'mongo':[]
-        }
+        env.roledefs = defaultdict(list)
 
         if not env.hosts:
             _lookup_ec2_instances()
