@@ -487,28 +487,37 @@ def analyze():
         session_id = str(session_r['_id'])
  
         # Process tweets
-        stopwords = extract.get_stopwords(language).copy()        
+        stopwords = extract.get_stopwords(language).copy()  
+        stoptags = set()
         stemmer = extract.get_stemmer(language)
         stem_map = defaultdict(Counter)       
         tweet_list = []      
         
         if query:
-            stopwords.update([x.lower() for x in query_lower.split()])
+            stoptags.update([x.lower().lstrip('#') for x in query_lower.split()])
+            stopwords.update(stoptags)
             cursor = tweepy.Cursor(api.search, q=query, lang=language, \
                 count=100, result_type='recent', include_entities=True) 
         else:
             cursor = tweepy.Cursor(api.list_timeline, list_id=list_id, \
                 count=100, include_entities=True)
-          
-        for tweet in cursor.items(limit=settings.TWITTER_SEARCH_LIMIT):  
 
+        for tweet in cursor.items(limit=settings.TWITTER_SEARCH_LIMIT):  
             tweet_dict = twutil.tweepy_model_to_dict(tweet)
                                         
             tweet_dict['session_id'] = session_id
             tweet_dict['embed'] = twutil.format_text(tweet_dict)              
             tweet_dict['tokens'] = extract.tokenize(tweet_dict['text'])
-            tweet_dict['hashtags'] = list(set(['#'+x['text'].lower() \
-                for x in tweet_dict['entities']['hashtags']]))
+            
+            # Filter hashtags from query
+            # tweet_dict['hashtags'] = list(set(['#'+x['text'].lower() \
+            #    for x in tweet_dict['entities']['hashtags']]))
+            tweet_dict['hashtags'] = list(set([
+                    '#'+x['text'].lower() \
+                    for x in tweet_dict['entities']['hashtags'] \
+                    if x['text'].lower() not in stoptags
+                ]))    
+                
             tweet_dict['urls'] = list(set([x['expanded_url'] \
                 for x in tweet_dict['entities']['urls']]))
             
