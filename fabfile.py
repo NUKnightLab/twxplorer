@@ -6,7 +6,7 @@ from fabric.api import env
 # Project-specific settings, alter as needed
 #
 env.project_name = basename(dirname(__file__))
-env.django = True
+env.django = False
 
 #
 # Add paths
