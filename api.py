@@ -545,12 +545,6 @@ def analyze():
                                
             tweet['stems_3'] = list(set(stems))
             trigram_counter.update(tweet['stems_3'])            
-
-        # Ignore trigrams that only appear once
-        for g, n in trigram_counter.items():
-            if n < 2:
-                del trigram_counter[g]
-                del stem_map[g]
                
         # ------------------------------------------------------------
         # Process bigrams
@@ -589,13 +583,7 @@ def analyze():
                                
             tweet['stems_2'] = list(set(stems))
             bigram_counter.update(tweet['stems_2'])            
-             
-        # Ignore bigrams that only appear once
-        for g, n in bigram_counter.items():
-            if n < 2:
-                del bigram_counter[g]
-                del stem_map[g]
-                 
+                              
         # ------------------------------------------------------------
         # Process unigrams              
         
@@ -758,9 +746,10 @@ def filter(session_id):
                 'id_str': tweet['id_str'],
                 'created_at': tweet['created_at']           
             })
-                
+         
+        # Filter out one-off stems      
         stem_counts = [x for x in stem_counter.most_common() \
-            if x[0] not in filter_stems]
+            if x[0] not in filter_stems and x[1] > 1]
         hashtag_counts = [x for x in hashtag_counter.most_common() \
             if x[0] not in filter_hashtags]
         url_counts = [x for x in url_counter.most_common() \
