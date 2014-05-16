@@ -12,7 +12,7 @@ cd /home/apps/sites/twxplorer
 
 export FLASK_SETTINGS_MODULE='core.settings.prd'
 
-python -u clean.py --days=7
+python -u clean.py --days=2
 
 echo "[`date`] Ending clean"
 
