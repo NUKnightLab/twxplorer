@@ -83,7 +83,8 @@
                 </div>
                 <a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
             </li>
-            <li><span id="tweet_count"></span></li>
+            <li><span id="tweet_count"></span> </li>
+            <li><button type="button" class="btn btn-link" id="more" style="display: none;">Get More Tweets</button></li>
             <li><button type="button" class="btn btn-link" id="save" style="display: none;">Save snapshot</button></li>
             <li><button type="button" class="btn btn-link" id="share" style="display: none;">Share snapshot</button></li>            
         </ul>
@@ -174,6 +175,7 @@ function filter_results(session_id, callback) {
             $('#main-content').removeClass('cover');
             if(_session.saved) {
                 $('#list_label').html('Saved snapshot from list:');
+                $('#more').hide();
             } else {
                 $('#list_label').html('List');
             }
@@ -211,6 +213,32 @@ $(function() {
         $('#language').val('en');
     }
        
+       
+    $('#more').click(function(event) {
+        hide_error();
+
+        show_progress('Searching Twitter');
+       
+        do_ajax("{{ url_for('analyze') }}"+_session._id,
+            {},
+            function(error) {
+                show_error('Error executing search ('+error+')');
+                hide_progress();
+            },
+            function(data) {
+                _filter = [];
+                if (data.session.tweet_count > 0) {  
+                  filter_results(data.session._id, function() {
+                      hide_progress();
+                  });
+                } else {
+                  show_warning("No tweets found matching '" + query + "'.")
+                  hide_progress();
+                }
+            }
+        );
+    });
+    
     $('#search').click(function(event) {
         hide_error();
         
@@ -235,7 +263,7 @@ $(function() {
                       hide_progress();
                   });
 
-                  $('#save').show();
+                  $('#more, #save').show();
                 } else {
                   show_warning("No tweets found for '" + $('#list option:selected').text() + "'.")
                   hide_progress();

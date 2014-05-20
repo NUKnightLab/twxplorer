@@ -445,23 +445,12 @@ def analyze(session_id=''):
     """
     Get tweets from twitter and analyze them
     
-    @language = language code, e.g. 'en'    
-    @query | @list_id = query string | list id
-    
-    
-    What is the strategry here?
-    
-    If brand new session
-        - search backwards in time (set max_id)
-    
-    If updating session
-        - try searching forward in time (set since_id)
-        - then try searching backwards in time (set max_id)
-    
-     """
+    @language = language code, e.g. 'en'  
+    @session_id OR  
+        @query | @list_id = query string | list id
+    """
     try:                            
         if session_id:
-            print '== loading', session_id
             _require_session_access(session_id)
 
             session_r = _session.find_one(
@@ -475,11 +464,15 @@ def analyze(session_id=''):
                 raise Exception('Search not found')
               
             language = search_r['language']  
-            query = search_r['query']
-            print '== language, query', language, query
+            
+            if 'query' in search_r:
+                query = search_r['query']
+                list_id = ''
+            else:
+                query = ''
+                list_id = search_r['list_id']
         else:               
             language = request.args.get('language') or 'en'
-            print language
             query = request.args.get('query')
             list_id = request.args.get('list_id')
 
@@ -514,7 +507,7 @@ def analyze(session_id=''):
                 'since_id': '',
                 'max_id': '',
                 'stem_counter': [],         # [[(stem), post count]]
-                'stem_map': {},            # {"stem": {"term": count}}  
+                'stem_map': {},             # {"stem": {"term": count}}  
             }
             session_r['_id'] = _session.save(session_r, manipulate=True)
             session_id = str(session_r['_id'])
@@ -563,29 +556,18 @@ def analyze(session_id=''):
         if session_r['since_id']:
             since_id = session_r['since_id']  
             while tweet_count < settings.TWITTER_SEARCH_LIMIT:            
-                print 'QUERY', 'since='+since_id     
-                    
+                #print 'QUERY', 'since='+since_id   
+                count = min(100, settings.TWITTER_SEARCH_LIMIT - tweet_count)  
                 tweets_result = api_method(
-                    count=100, since_id=since_id, **api_params)    
+                    count=count, since_id=since_id, **api_params)    
                 
-                print '\tGOT RESULTS', len(tweets_result)
+                #print '\tGOT RESULTS', len(tweets_result)
             
                 for tweet in tweets_result:
-                    tweet_dict = twutil.tweepy_model_to_dict(tweet)                                        
+                    tweet_dict = twutil.process_status(tweet, stoptags)                                        
                     tweet_dict['session_id'] = session_id
-                    tweet_dict['embed'] = twutil.format_text(tweet_dict)              
                     tweet_dict['tokens'] = extract.tokenize(tweet_dict['text'])
-            
-                    # add hashtags/urls to tweet and delete entities
-                    tweet_dict['hashtags'] = list(set([
-                            '#'+x['text'].lower() \
-                            for x in tweet_dict['entities']['hashtags'] \
-                            if x['text'].lower() not in stoptags
-                        ]))                    
-                    tweet_dict['urls'] = list(set([x['expanded_url'] \
-                        for x in tweet_dict['entities']['urls']]))            
-                    del tweet_dict['entities']
-            
+                                           
                     tweet_list.append(tweet_dict)
                     tweet_ids.append(tweet_dict['id_str'])
             
@@ -603,34 +585,16 @@ def analyze(session_id=''):
             api_params['max_id'] = session_r['max_id']
              
         while tweet_count < settings.TWITTER_SEARCH_LIMIT:  
-            print 'QUERY', api_params         
-
+            #print 'QUERY', api_params         
             count = min(100, settings.TWITTER_SEARCH_LIMIT - tweet_count) 
             tweets_result = api_method(count=count, **api_params)
 
-            print '\tGOT RESULTS', len(tweets_result)
+            #print '\tGOT RESULTS', len(tweets_result)
             
             for tweet in tweets_result:
-                tweet_dict = twutil.tweepy_model_to_dict(tweet)                                       
+                tweet_dict = twutil.process_status(tweet, stoptags)   
                 tweet_dict['session_id'] = session_id
-                tweet_dict['embed'] = twutil.format_text(tweet_dict)              
                 tweet_dict['tokens'] = extract.tokenize(tweet_dict['text'])
-            
-                # add hashtags/urls to tweet and delete entities
-                tweet_dict['hashtags'] = list(set([
-                        '#'+x['text'].lower() \
-                        for x in tweet_dict['entities']['hashtags'] \
-                        if x['text'].lower() not in stoptags
-                    ]))                    
-                tweet_dict['urls'] = list(set([x['expanded_url'] \
-                    for x in tweet_dict['entities']['urls']]))            
-                del tweet_dict['entities']
-                
-                # add voices
-                tweet_dict['voices'] = ['@'+tweet_dict['user']['screen_name']]
-                if 'retweeted_status' in tweet_dict:
-                    tweet_dict['voices'].append(
-                        '@'+tweet_dict['retweeted_status']['user']['screen_name'])
             
                 tweet_list.append(tweet_dict)
                 tweet_ids.append(tweet_dict['id_str'])
@@ -639,7 +603,7 @@ def analyze(session_id=''):
             n = len(tweets_result)
             tweet_count += n
 
-            if n == 0:
+            if n < 10:
                 break # I guess we ran out of tweets
             
             api_params['max_id'] = str(int(min(tweet_ids)) - 1)  # !!!
@@ -648,7 +612,6 @@ def analyze(session_id=''):
         if not tweet_count:
             return _jsonify(session=session_r)
             
-        print 'Analyzing tweets'
         for tweet in tweet_list:
             stem_set = set()
         
@@ -858,8 +821,7 @@ def filter(session_id):
             id_set.add(tweet['id_str'])
           
             if 'retweeted_status' in tweet:
-                r = tweet['retweeted_status']
-                retweeted_id = r['id_str']
+                retweeted_id = tweet['retweeted_status']['id_str']
                 if retweeted_id in id_set:
                     retweets += 1
                     continue              
@@ -882,7 +844,7 @@ def filter(session_id):
             if x[0] not in filter_urls]
         voice_counts = [x for x in voice_counter.most_common() \
             if x[0] not in filter_voices]
-                           
+               
         return _jsonify(
             search=search_r,
             session=session_r,

@@ -209,6 +209,8 @@ function initialize() {
             $('#terms a[data-toggle="tooltip"]').slice(-count).tooltip();        
         }
     );
+
+
      
     _HashtagLoader = new Loader($('#hashtags'), 20,
         function(hashtag_counts, callback) {
@@ -220,7 +222,7 @@ function initialize() {
                     hashtag = hashtag_counts[i][0];
                     count = hashtag_counts[i][1];
                     var pct = (count * 100)/max_count;
-            
+                                    
                     html += ''
                         + '<li class="term" onclick="add_filter(\''+hashtag+'\');">'
                         + '<span class="count">'+count+'</span>'
@@ -229,6 +231,7 @@ function initialize() {
                         + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
                         + '</div>'
                         + '</li>';     
+
                 }  
             } else {
                 html = '<p class="msg">no hashtags found</p>';
