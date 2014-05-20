@@ -114,9 +114,9 @@ function get_term(s) {
     }
     if(s in _session.stem_map) { 
         if(_session.stem_map[s].length > 1) {
-            return _session.stem_map[s][0]+', ...';
+            return _session.stem_map[s][0][0]+', ...';
         } 
-        return _session.stem_map[s];
+        return _session.stem_map[s][0][0];
     }
     return s;
 }
@@ -144,7 +144,6 @@ function tweet_snapshot() {
 }
 
 function initialize() {
-
     //
     // #save handler
     //
@@ -172,36 +171,45 @@ function initialize() {
     _TermsLoader = new Loader($('#terms'), 20,
         function(stem_counts, callback) {  
             var html = '';
-            var max_count =  _TermsLoader.data[0][1];
             
-            for(var i = 0; i < stem_counts.length; i++) {                   
-                var stem = stem_counts[i][0];
-                var count = stem_counts[i][1];
-                var pct = (count * 100)/max_count;
+            if(stem_counts.length) {
+                var max_count =  _TermsLoader.data[0][1];
             
-                term_list = _session.stem_map[stem];
-                if(term_list && term_list.length > 1) {                
-                    anchor = '<a data-toggle="tooltip" data-placement="right" data-title="'+term_list.join(', ')+'" data-trigger="hover">';
-                } else {
-                    anchor = '<a>';
-                }
+                for(var i = 0; i < stem_counts.length; i++) {                   
+                    var stem = stem_counts[i][0];
+                    var count = stem_counts[i][1];
+                    var pct = (count * 100)/max_count;
+            
+                    term_list = _session.stem_map[stem];
+                    if(term_list && term_list.length > 1) {     
+                        var t = [];
+                        for(var k = 0; k < term_list.length; k++) {
+                            t.push(term_list[k][0]);   
+                        }           
+                        anchor = '<a data-toggle="tooltip" data-placement="right" data-title="'+t.join(', ')+'" data-trigger="hover">';
+                    } else {
+                        anchor = '<a>';
+                    }
                                
-                html += ''
-                    + '<li class="term" onclick="add_filter(\''+stem.replace("'", "\\&apos;")+'\');">'
-                    + '<span class="count">'+count+'</span>'
-                    + '<div class="inner">'
-                    + anchor+get_term(stem, ', ')+'</a>'
-                    + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
-                    + '</div>'
-                    + '</li>';     
-            }            
+                    html += ''
+                        + '<li class="term" onclick="add_filter(\''+stem.replace("'", "\\&apos;")+'\');">'
+                        + '<span class="count">'+count+'</span>'
+                        + '<div class="inner">'
+                        + anchor+get_term(stem, ', ')+'</a>'
+                        + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
+                        + '</div>'
+                        + '</li>';     
+                }     
+            } else {
+                html = '<p class="msg">no terms found</p>';
+            }       
             callback(html);       
         },
         function(count) {
             $('#terms a[data-toggle="tooltip"]').slice(-count).tooltip();        
         }
     );
- 
+     
     _HashtagLoader = new Loader($('#hashtags'), 20,
         function(hashtag_counts, callback) {
             var hashtag, count, html = '';
@@ -224,6 +232,33 @@ function initialize() {
                 }  
             } else {
                 html = '<p class="msg">no hashtags found</p>';
+            }          
+            callback(html);       
+        }
+    );
+
+    _VoiceLoader = new Loader($('#voices'), 20,
+        function(voice_counts, callback) {
+            var voice, count, html = '';
+            
+            if(voice_counts.length) {
+                var max_count =  _VoiceLoader.data[0][1];
+                for(var i = 0; i < voice_counts.length; i++) {                   
+                    voice = voice_counts[i][0];
+                    count = voice_counts[i][1];
+                    var pct = (count * 100)/max_count;
+            
+                    html += ''
+                        + '<li class="term" onclick="add_filter(\''+voice+'\');">'
+                        + '<span class="count">'+count+'</span>'
+                        + '<div class="inner">'
+                        + '<a>'+voice+'</a>'
+                        + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
+                        + '</div>'
+                        + '</li>';     
+                }  
+            } else {
+                html = '<p class="msg">no voices found</p>';
             }          
             callback(html);       
         }

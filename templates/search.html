@@ -74,7 +74,8 @@
                 </div>
                 <a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
             </li>
-            <li><span id="tweet_count"></span></li>
+            <li><span id="tweet_count"></span> </li>
+            <li><button type="button" class="btn btn-link" id="more" style="display: none;">Get More Tweets</button></li>
             <li><button type="button" class="btn btn-link" id="save" style="display: none;">Save snapshot</button></li>
             <li><button type="button" class="btn btn-link" id="share" style="display: none;">Share snapshot</button></li>            
         </ul>
@@ -91,7 +92,15 @@
    <div class="span8">
         <div class="row-fluid spaced">   
             <div class="span7 frame">
-                <div class="frame-header">Terms</div>
+                <div class="frame-header">Terms
+                    <!-- filters in headers -->
+                    <div class="filter-container">
+                        <ul class="filter-list">
+                            <li>hello there<button class="close">&times;</button></li>
+                            <li>glenn robinson<button class="close">&times;</button></li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="frame-body">
                     <ul id='terms' class="unstyled histogram-container">
                         <!-- terms go here -->
@@ -99,7 +108,14 @@
                 </div>
             </div>
             <div class="span5 frame">
-                <div class="frame-header">Hashtags</div>
+                <div class="frame-header">Hashtags
+                    <!-- filters in headers -->
+                    <div class="filter-container">
+                        <ul class="filter-list">
+                            <li>#whitesox<button class="close">&times;</button></li>
+                        </ul>
+                    </div>               
+                </div>
                 <div class="frame-body">
                    <ul id="hashtags" class="unstyled histogram-container">
                      <!-- hashtags go here -->
@@ -107,14 +123,38 @@
                 </div>   
             </div>
         </div>
-        <div class="row-fluid">
-            <div class="span12 frame">
-                <div class="frame-header">Links</div>
+        <div class="row-fluid spaced">
+            <div class="span7 frame">
+                <div class="frame-header">Links
+                    <!-- filters in headers -->
+                    <div class="filter-container">
+                        <ul class="filter-list">
+                            <li>Blah blah blah<button class="close">&times;</button></li>
+                        </ul>
+                    </div>                               
+                </div>
                 <div class="frame-body">
                     <ul id="urls" class="unstyled">
                         <!-- hashtags go here -->
                     </ul>
                 </div>
+            </div>
+            <div class="span5 frame">
+                <div class="frame-header">Voices
+                
+                    <!-- filters in headers -->
+                    <div class="filter-container">
+                        <ul class="filter-list">
+                            <li>@SportsCenter<button class="close">&times;</button></li>
+                        </ul>
+                    </div>               
+
+                </div>
+                <div class="frame-body">
+                   <ul id="voices" class="unstyled histogram-container">
+                     <!-- voices go here -->
+                   </ul>
+                </div>   
             </div>
         </div>
     </div>    
@@ -145,7 +185,7 @@ var _UrlsLoader;
 function filter_results(session_id, callback) { 
     show_filter(); 
     
-    $('#terms, #hashtags, #urls, #tweets, #tweet_count, #timestamp').html('');
+    $('#terms, #hashtags, #urls, #voices, #tweets, #tweet_count, #timestamp').html('');
         
     do_ajax('/filter/'+session_id+'/', 
         {filter: _filter},
@@ -164,6 +204,7 @@ function filter_results(session_id, callback) {
             $('#main-content').removeClass('cover');
             if(_session.saved) {
                 $('#search_label').html('Saved snapshot');
+                $('#more').hide();
             } else {
                 $('#search_label').html('Search');
             }
@@ -181,6 +222,7 @@ function filter_results(session_id, callback) {
                                             
             _TermsLoader.set_data(data.stem_counts).load_more();
             _HashtagLoader.set_data(data.hashtag_counts).load_more();
+            _VoiceLoader.set_data(data.voice_counts).load_more();
             _TweetsLoader.set_data(data.tweets).load_more();            
             _UrlsLoader.set_data(data.url_counts).show_loading().load_more();
                                                                         
@@ -210,6 +252,33 @@ $(function() {
         $('#language').val('en');
     }
        
+       
+    $('#more').click(function(event) {
+        hide_error();
+
+        show_progress('Searching Twitter');
+       
+        do_ajax("{{ url_for('analyze') }}"+_session._id,
+            {},
+            function(error) {
+                show_error('Error executing search ('+error+')');
+                hide_progress();
+            },
+            function(data) {
+                console.log('GOT DATA');
+                _filter = [];
+                if (data.session.tweet_count > 0) {  
+                  filter_results(data.session._id, function() {
+                      hide_progress();
+                  });
+                } else {
+                  show_warning("No tweets found matching '" + query + "'.")
+                  hide_progress();
+                }
+            }
+        );
+    });
+    
     $('#search').click(function(event) {
         hide_error();
         
@@ -234,7 +303,7 @@ $(function() {
                       hide_progress();
                   });
 
-                  $('#save').show();
+                  $('#more, #save').show();
                 } else {
                   show_warning("No tweets found matching '" + query + "'.")
                   hide_progress();

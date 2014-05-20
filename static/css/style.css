@@ -54,18 +54,24 @@ ALERTS/MODALS
 /* 
 FILTERS
 */
-.filter-container {padding: 0;float: right;}
+.filter-container {padding: 0;float: right;
+/* ADDED */
+    display: inline;
+
+}
 .filter-list {margin: -3px 0 0 6px;padding: 0;min-height: 28px;}
 
 .filter-list li {
     float: left;
     position: relative;
     list-style: none;
-    margin: 0 8px 4px 0;
+    /* FOR FILTERS IN HEADERS margin: 0 8px 4px 0;*/
+    margin: 0 0 4px 4px;
     padding: 2px 6px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    background-color: #efefef;
+    /* FOR FILTERS IN HEADERS background-color: #efefef;*/
+    background-color: #fff;
     color: #333;
     font-size: .9em;
 }
@@ -78,11 +84,7 @@ FILTERS
     padding: 3px 6px;
 }
 
-button#save.btn {
-    padding-top: 0;
-}
-
-button#share.btn {
+button#save.btn, button#share.btn, button#more.btn {
     padding-top: 0;
 }
 
@@ -204,7 +206,7 @@ form .dropdown {
 }
 #hashtags {height: 360px;overflow: auto;font-size: 0.9em; } 
 
-#urls {height: 160px;overflow: auto;font-size: 0.9em;}
+#urls, #voices {height: 160px;overflow: auto;font-size: 0.9em;}
 
 #urls li div {
     margin: 7px 0 0 0;

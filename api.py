@@ -429,221 +429,338 @@ def history():
         return render_template('history.html', error=str(e))
 
 
+def _process_tokens(tokens, stemmer, n):
+    """
+    Get n-grams and stems for tokens
+    """
+    grams = nltk.ngrams(tokens, n)
+    stems = extract.stems_from_grams(grams, stemmer)
+    return grams, stems
+
+
 @app.route("/analyze/", methods=['GET', 'POST'])
+@app.route("/analyze/<session_id>/", methods=['GET', 'POST'])
 @login_required
-def analyze():
+def analyze(session_id=''):
     """
     Get tweets from twitter and analyze them
     
-    @language = language code, e.g. 'en'
+    @language = language code, e.g. 'en'    
+    @query | @list_id = query string | list id
     
-    @query = query string
-        OR
-    @list_id = list id
+    
+    What is the strategry here?
+    
+    If brand new session
+        - search backwards in time (set max_id)
+    
+    If updating session
+        - try searching forward in time (set since_id)
+        - then try searching backwards in time (set max_id)
+    
      """
-    try:
-        language = request.args.get('language') or 'en'
+    try:                            
+        if session_id:
+            print '== loading', session_id
+            _require_session_access(session_id)
 
-        query = request.args.get('query')
-        list_id = request.args.get('list_id')
-         
-        if query:
-            query_lower = query.lower()
-        elif list_id:
-            list_map = _get_list_map()
-        else:    
-            raise Exception('No query or list specified')                  
-               
-        # Get api object
-        api = tweepy.API(get_oauth())
-                            
-        # Get/create search record
-        param = {
-            'username': session['username'], 
-            'language': language
-        }
-        if query:
-            param['query_lower'] = query_lower
-        else:
-            param['list_id'] = list_id
-        search_r = _search.find_one(param)
-        if not search_r:
-            search_r = param
+            session_r = _session.find_one(
+                {'_id': bson.ObjectId(session_id)})
+            if not session_r:
+                raise Exception('Session not found')
+            
+            search_r = _search.find_one(
+                {'_id': bson.ObjectId(session_r['search_id'])})
+            if not search_r:
+                raise Exception('Search not found')
+              
+            language = search_r['language']  
+            query = search_r['query']
+            print '== language, query', language, query
+        else:               
+            language = request.args.get('language') or 'en'
+            print language
+            query = request.args.get('query')
+            list_id = request.args.get('list_id')
+
+            # Get/create search record
+            param = {
+                'username': session['username'], 
+                'language': language
+            }
             if query:
-                search_r['query'] = query   
-            else:
-                search_r['list_name'] = list_map[list_id]    
-            search_r['_id'] = _search.save(search_r, manipulate=True)
-        search_id = str(search_r['_id'])
+                param['query_lower'] = query.lower()
+            elif list_id:
+                param['list_id'] = list_id
+                list_map = _get_list_map()
+            else:    
+                raise Exception('No query or list specified')                  
+                                           
+            search_r = _search.find_one(param)
+            if not search_r:
+                search_r = param
+                if query:
+                    search_r['query'] = query   
+                else:
+                    search_r['list_name'] = list_map[list_id]    
+                search_r['_id'] = _search.save(search_r, manipulate=True)
+            search_id = str(search_r['_id'])
         
-        # Create new search session
-        session_r = {
-            'search_id': search_id,
-            'dt': datetime.datetime.now().isoformat(),
-            'stem_counts': [],      # [[stem, post count]]
-            'stem_map': {},         # {stem: [term, count]}  
-        }
-        session_r['_id'] = _session.save(session_r, manipulate=True)
-        session_id = str(session_r['_id'])
+            # Create search session
+            session_r = {
+                'search_id': search_id,
+                'dt': datetime.datetime.now().isoformat(),
+                'tweet_count': 0,
+                'since_id': '',
+                'max_id': '',
+                'stem_counter': [],         # [[(stem), post count]]
+                'stem_map': {},            # {"stem": {"term": count}}  
+            }
+            session_r['_id'] = _session.save(session_r, manipulate=True)
+            session_id = str(session_r['_id'])
  
-        # Process tweets
+        # Set stopwords/stoptags
         stopwords = extract.get_stopwords(language).copy()  
         stoptags = set()
+        if query:
+            stoptags.update([x.lower().lstrip('#') \
+                for x in search_r['query_lower'].split()])
+            stopwords.update(stoptags)
+
+        # Stemmer
         stemmer = extract.get_stemmer(language)
-        stem_map = defaultdict(Counter)       
-        tweet_list = []      
+
+        # Set stem counter =  Counter({(stem): n_tweets})
+        stem_counter = Counter(dict([
+            [tuple(s), n] for s, n in session_r['stem_counter']
+        ])) 
+        
+        # Set stem map = {'stem': Counter({'term': n})}        
+        stem_map = defaultdict(Counter)     # "stem" : [["gram", n]]
+        for s, c in session_r['stem_map'].iteritems():
+            stem_map[s] = Counter(dict([[k, v] for k, v in c]))
+ 
+        # Get tweets  (API allows max of 100 per query)   
+        # See https://dev.twitter.com/docs/working-with-timelines            
+        api = tweepy.API(get_oauth())
+        api_method = None
+        api_params = {'include_entities': True}
         
         if query:
-            stoptags.update([x.lower().lstrip('#') for x in query_lower.split()])
-            stopwords.update(stoptags)
-            cursor = tweepy.Cursor(api.search, q=query, lang=language, \
-                count=100, result_type='recent', include_entities=True) 
+            api_method = api.search            
+            api_params['q'] = query
+            api_params['lang'] = language
+            api_params['result_type'] = 'recent'
         else:
-            cursor = tweepy.Cursor(api.list_timeline, list_id=list_id, \
-                count=100, include_entities=True)
+            api_method = api.list_timeline
+            api_params['list_id'] = list_id
 
-        for tweet in cursor.items(limit=settings.TWITTER_SEARCH_LIMIT):  
-            tweet_dict = twutil.tweepy_model_to_dict(tweet)
-                                        
-            tweet_dict['session_id'] = session_id
-            tweet_dict['embed'] = twutil.format_text(tweet_dict)              
-            tweet_dict['tokens'] = extract.tokenize(tweet_dict['text'])
-            
-            # Filter hashtags from query
-            # tweet_dict['hashtags'] = list(set(['#'+x['text'].lower() \
-            #    for x in tweet_dict['entities']['hashtags']]))
-            tweet_dict['hashtags'] = list(set([
-                    '#'+x['text'].lower() \
-                    for x in tweet_dict['entities']['hashtags'] \
-                    if x['text'].lower() not in stoptags
-                ]))    
-                
-            tweet_dict['urls'] = list(set([x['expanded_url'] \
-                for x in tweet_dict['entities']['urls']]))
-            
-            tweet_list.append(tweet_dict)
+        tweet_list = []     
+        tweet_ids = [] 
+        tweet_count = 0
 
-        # ------------------------------------------------------------
-        # Process trigrams
-        
-        trigram_counter = Counter()
-        
-        for tweet in tweet_list:
-            grams = [] 
-                     
-            for tokens in tweet['tokens']:
-                for g in nltk.ngrams(tokens, 3):
-                    if extract.stoplist_iter(g, stopwords):
-                        continue
-                    if g[0].startswith('@') or g[1].startswith('@') or g[2].startswith('@'):
-                        continue
-                    grams.append(g)
-
-            stems = extract.stems_from_grams(grams, stemmer)                                                            
-            for s, g in zip(stems, grams):
-                stem_map[s].update([g]) 
-                               
-            tweet['stems_3'] = list(set(stems))
-            trigram_counter.update(tweet['stems_3'])            
-               
-        # ------------------------------------------------------------
-        # Process bigrams
-        
-        bigram_counter = Counter()
-        
-        for tweet in tweet_list:
-            grams = []    
-            stems = []
+        # If this is a 'get more' session, try searching forwards in time
+        if session_r['since_id']:
+            since_id = session_r['since_id']  
+            while tweet_count < settings.TWITTER_SEARCH_LIMIT:            
+                print 'QUERY', 'since='+since_id     
                     
-            for tokens in tweet['tokens']:
-                gram_list = nltk.ngrams(tokens, 2)
-                stem_list = extract.stems_from_grams(gram_list, stemmer)
-
-                last_i = len(gram_list) - 1
+                tweets_result = api_method(
+                    count=100, since_id=since_id, **api_params)    
                 
-                for i, g in enumerate(gram_list):     
-                    if extract.stoplist_iter(g, stopwords):
-                        continue     
-                    if g[0].startswith('@') or g[1].startswith('@'):
-                        continue    
-                    
+                print '\tGOT RESULTS', len(tweets_result)
+            
+                for tweet in tweets_result:
+                    tweet_dict = twutil.tweepy_model_to_dict(tweet)                                        
+                    tweet_dict['session_id'] = session_id
+                    tweet_dict['embed'] = twutil.format_text(tweet_dict)              
+                    tweet_dict['tokens'] = extract.tokenize(tweet_dict['text'])
+            
+                    # add hashtags/urls to tweet and delete entities
+                    tweet_dict['hashtags'] = list(set([
+                            '#'+x['text'].lower() \
+                            for x in tweet_dict['entities']['hashtags'] \
+                            if x['text'].lower() not in stoptags
+                        ]))                    
+                    tweet_dict['urls'] = list(set([x['expanded_url'] \
+                        for x in tweet_dict['entities']['urls']]))            
+                    del tweet_dict['entities']
+            
+                    tweet_list.append(tweet_dict)
+                    tweet_ids.append(tweet_dict['id_str'])
+            
+                # Update tweet count
+                n = len(tweets_result)
+                tweet_count += n
+           
+                if n < 100:
+                    break # I guess we ran out of newer tweets
+                                    
+                since_id = max(tweet_ids)
+                
+        # Try going backwards in time   
+        if session_r['max_id']:
+            api_params['max_id'] = session_r['max_id']
+             
+        while tweet_count < settings.TWITTER_SEARCH_LIMIT:  
+            print 'QUERY', api_params         
+
+            count = min(100, settings.TWITTER_SEARCH_LIMIT - tweet_count) 
+            tweets_result = api_method(count=count, **api_params)
+
+            print '\tGOT RESULTS', len(tweets_result)
+            
+            for tweet in tweets_result:
+                tweet_dict = twutil.tweepy_model_to_dict(tweet)                                       
+                tweet_dict['session_id'] = session_id
+                tweet_dict['embed'] = twutil.format_text(tweet_dict)              
+                tweet_dict['tokens'] = extract.tokenize(tweet_dict['text'])
+            
+                # add hashtags/urls to tweet and delete entities
+                tweet_dict['hashtags'] = list(set([
+                        '#'+x['text'].lower() \
+                        for x in tweet_dict['entities']['hashtags'] \
+                        if x['text'].lower() not in stoptags
+                    ]))                    
+                tweet_dict['urls'] = list(set([x['expanded_url'] \
+                    for x in tweet_dict['entities']['urls']]))            
+                del tweet_dict['entities']
+                
+                # add voices
+                tweet_dict['voices'] = ['@'+tweet_dict['user']['screen_name']]
+                if 'retweeted_status' in tweet_dict:
+                    tweet_dict['voices'].append(
+                        '@'+tweet_dict['retweeted_status']['user']['screen_name'])
+            
+                tweet_list.append(tweet_dict)
+                tweet_ids.append(tweet_dict['id_str'])
+            
+            # Update tweet count
+            n = len(tweets_result)
+            tweet_count += n
+
+            if n == 0:
+                break # I guess we ran out of tweets
+            
+            api_params['max_id'] = str(int(min(tweet_ids)) - 1)  # !!!
+          
+        # Nothing to do? 
+        if not tweet_count:
+            return _jsonify(session=session_r)
+            
+        print 'Analyzing tweets'
+        for tweet in tweet_list:
+            stem_set = set()
+        
+            # trigrams
+            gram_list = [] 
+            stem_list = []
+        
+            for tokens in tweet['tokens']:
+                grams, stems = _process_tokens(tokens, stemmer, 3)
+            
+                for i, g in enumerate(grams):
+                    if extract.stoplist_iter(g, stopwords) \
+                    or any([x.startswith('@') for x in g]):
+                        continue
+                                            
+                    gram_list.append(g)
+                    stem_list.append(stems[i])
+
+            stem_set.update(stem_list)
+            stem_counter.update(set(stem_list))
+        
+            for s, g in zip(stem_list, gram_list):
+                stem_map[' '.join(s)].update([' '.join(g)])
+                                           
+            # bigrams
+            gram_list = [] 
+            stem_list = []
+
+            for tokens in tweet['tokens']:
+                grams, stems = _process_tokens(tokens, stemmer, 2)
+                last_i = len(stems) - 1
+                                
+                for i, g in enumerate(grams):
+                    if extract.stoplist_iter(g, stopwords) \
+                    or any([x.startswith('@') for x in g]):
+                        continue
+
                     # Filter by trigrams                              
                     if i > 0 and \
-                    (stem_list[i-1][0], stem_list[i][0], stem_list[i][1]) in trigram_counter:
+                    (stems[i-1][0], stems[i][0], stems[i][1]) in stem_counter:
                         continue
                     if i < last_i and \
-                    (stem_list[i][0], stem_list[i][1], stem_list[i+1][1]) in trigram_counter:
+                    (stems[i][0], stems[i][1], stems[i+1][1]) in stem_counter:
                         continue
                     
-                    grams.append(g)
-                    stems.append(stem_list[i])
-                                                      
-            for s, g in zip(stems, grams):
-                stem_map[s].update([g]) 
-                               
-            tweet['stems_2'] = list(set(stems))
-            bigram_counter.update(tweet['stems_2'])            
-                              
-        # ------------------------------------------------------------
-        # Process unigrams              
-        
-        for tweet in tweet_list:
-            grams = []
-            stems = []
-            
-            for tokens in tweet['tokens']:                               
-                gram_list = nltk.ngrams(tokens, 1)
-                stem_list = extract.stems_from_grams(gram_list, stemmer)
+                    gram_list.append(g)
+                    stem_list.append(stems[i])
                 
-                last_i = len(gram_list) - 1
-                               
-                for i, g in enumerate(gram_list):
+            stem_set.update(stem_list)
+            stem_counter.update(set(stem_list))
+        
+            for s, g in zip(stem_list, gram_list):
+                stem_map[' '.join(s)].update([' '.join(g)])
+         
+            # unigrams
+            gram_list = [] 
+            stem_list = []
+
+            for tokens in tweet['tokens']:
+                grams, stems = _process_tokens(tokens, stemmer, 1)
+                last_i = len(stems) - 1
+            
+                for i, g in enumerate(grams):
                     if extract.stoplist_iter(g, stopwords):
                         continue
-                        
-                    # Filter bigram terms
+                    
+                    # Filter by bigrams
                     if i > 0 and \
-                    (stem_list[i-1][0], stem_list[i][0]) in bigram_counter:
+                    (stems[i-1][0], stems[i][0]) in stem_counter:
                         continue
                     if i < last_i and \
-                    (stem_list[i][0], stem_list[i+1][0]) in bigram_counter:
+                    (stems[i][0], stems[i+1][0]) in stem_counter:
                         continue                        
-                        
+                    
                     # Filter trigram terms  
                     if i > 1 and \
-                    (stem_list[i-2][0], stem_list[i-1][0], stem_list[i][0]) in trigram_counter:
+                    (stems[i-2][0], stems[i-1][0], stems[i][0]) in stem_counter:
                         continue
                     if i > 0 and i < last_i and \
-                    (stem_list[i-1][0], stem_list[i][0], stem_list[i+1][0]) in trigram_counter:
+                    (stems[i-1][0], stems[i][0], stems[i+1][0]) in stem_counter:
                         continue                    
                     if i < (last_i - 1) and \
-                    (stem_list[i][0], stem_list[i+1][0], stem_list[i+2][0]) in trigram_counter:
+                    (stems[i][0], stems[i+1][0], stems[i+2][0]) in stem_counter:
                         continue
-                                
-                    grams.append(g)
-                    stems.append(stem_list[i])
-                        
-            for s, g in zip(stems, grams):
-                stem_map[s].update([g]) 
-          
-            # Process stems
-            tweet['stems'] = [' '.join(x) for x in set(stems)] 
-            tweet['stems'].extend([' '.join(x) for x in tweet['stems_2'] if x in bigram_counter])            
-            tweet['stems'].extend([' '.join(x) for x in tweet['stems_3'] if x in trigram_counter])
-            
-            del tweet['stems_2']
-            del tweet['stems_3']
-                        
-        # Update session
-        for stem, c in stem_map.iteritems():
-            session_r['stem_map'][' '.join(stem)] = \
-                [' '.join(k) for k, v in c.most_common()]        
-        
-        # Save tweets
-        if tweet_list:
-            _tweets.insert(tweet_list)
 
-        session_r['tweet_count'] = len(tweet_list)
+                    gram_list.append(g)
+                    stem_list.append(stems[i])
+        
+            stem_set.update(stem_list)
+            stem_counter.update(set(stem_list))
+        
+            for s, g in zip(stem_list, gram_list):
+                stem_map[' '.join(s)].update([' '.join(g)])
+        
+            # add stems to tweet and delete tokens
+            tweet['stems'] = [' '.join(x) for x in stem_set]
+            del tweet['tokens']
+                                              
+        # Save tweets
+        _tweets.insert(tweet_list)
+
+        # Update session
+        session_r['since_id'] = max(tweet_ids)
+        session_r['max_id'] = str(int(min(tweet_ids)) - 1) 
+        session_r['tweet_count'] += tweet_count
+
+        session_r['stem_counter'] = stem_counter.most_common()
+    
+        session_r['stem_map'] = {}
+        for stem, c in stem_map.iteritems():
+            session_r['stem_map'][stem] = c.most_common()
+                 
         _session.save(session_r)
                 
         return _jsonify(session=session_r)
@@ -653,8 +770,8 @@ def analyze():
     except Exception, e:
         traceback.print_exc()
         return _jsonify(error=str(e))
-
-                    
+    
+                        
 @app.route("/filter/<session_id>/", methods=['GET', 'POST'])
 # commented out to allow shared snapshots: @login_required
 def filter(session_id):
@@ -685,12 +802,15 @@ def filter(session_id):
         filter_stems = []
         filter_hashtags = []       
         filter_urls = []
+        filter_voices = []
         
         for element in filter:
             if element.startswith('#'):
                 filter_hashtags.append(element)
             elif element.startswith('http'):
                 filter_urls.append(element)
+            elif element.startswith('@'):
+                filter_voices.append(element)
             else:
                 filter_stems.append(element)
                 
@@ -700,23 +820,27 @@ def filter(session_id):
             params['stems'] = {'$all': filter_stems}
         if filter_hashtags:
             params['hashtags'] = {'$all': filter_hashtags}
-        
+        if filter_voices:
+            params['voices'] = {'$all': filter_voices}
+                
         cursor = _tweets.find(params, {
                 'embed': 1,
                 'id_str': 1,
                 'created_at': 1,
                 'user.name': 1,
                 'user.screen_name': 1,
-                'retweeted_status.id_str': 1,
+                'retweeted_status': 1,
                 'stems': 1,
                 'hashtags': 1,
-                'urls': 1
+                'urls': 1,
+                'voices': 1
             }, sort=[('dt', pymongo.DESCENDING)])
         
         # Process tweets
         stem_counter = Counter()
         hashtag_counter = Counter()
         url_counter = Counter()
+        voice_counter = Counter()
         
         tweets = []   
         retweets = 0        
@@ -726,6 +850,7 @@ def filter(session_id):
             stem_counter.update(tweet['stems'])
             hashtag_counter.update(tweet['hashtags'])
             url_counter.update(tweet['urls'])
+            voice_counter.update(tweet['voices'])
             
             if tweet['id_str'] in id_set:
                 retweets += 1
@@ -733,7 +858,8 @@ def filter(session_id):
             id_set.add(tweet['id_str'])
           
             if 'retweeted_status' in tweet:
-                retweeted_id = tweet['retweeted_status']['id_str']
+                r = tweet['retweeted_status']
+                retweeted_id = r['id_str']
                 if retweeted_id in id_set:
                     retweets += 1
                     continue              
@@ -754,6 +880,8 @@ def filter(session_id):
             if x[0] not in filter_hashtags]
         url_counts = [x for x in url_counter.most_common() \
             if x[0] not in filter_urls]
+        voice_counts = [x for x in voice_counter.most_common() \
+            if x[0] not in filter_voices]
                            
         return _jsonify(
             search=search_r,
@@ -761,6 +889,7 @@ def filter(session_id):
             stem_counts=stem_counts, 
             hashtag_counts=hashtag_counts,
             url_counts=url_counts,
+            voice_counts=voice_counts,
             tweets=tweets,
             retweets=retweets
         )
