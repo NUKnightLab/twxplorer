@@ -52,7 +52,7 @@ _re_stoplist = re.compile(r'^([a-z]|[%s\d]+)$' % string.punctuation)
 _re_url = re.compile(r'http[^ ]+', re.I)
  
 # match clause delimiters
-_re_clause = re.compile(u'[.?!:;,"\r\n“”—]|\s+[\'‘]|[\'’]\s+|#\w{1,15}', re.U)
+_re_clause = re.compile(u'[.?!:;,"\r\n“”—…]|\s+[\'‘]|[\'’]\s+|#\w{1,15}', re.U)
 
 # user mentions (not hashtags, since now treating as clause delimiter)
 #_re_entity = re.compile(r'(@\w{1,15}|#\w{1,15})')
