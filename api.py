@@ -189,12 +189,10 @@ def _require_session_owned(session_id):
     Require that the session is owned by the logged in user
     """
     session_r = _session.find_one({'_id': bson.ObjectId(session_id)})
-    if not session_r:
-        raise Exception('Session not found')    
+    assert session_r, 'Session not found'   
 
     search_r = _search.find_one({'_id': bson.ObjectId(session_r['search_id'])})
-    if not search_r:
-        raise Exception('Search not found')
+    assert search_r, 'Search not found'   
  
     if search_r['username'] != session.get('username', ''):
         raise Exception('You do not have permission to access this snapshot')
@@ -206,12 +204,10 @@ def _require_session_access(session_id):
     Require that the session is shared or owned by the logged in user
     """
     session_r = _session.find_one({'_id': bson.ObjectId(session_id)})
-    if not session_r:
-        raise Exception('Session not found')    
+    assert session_r, 'Session not found'   
 
     search_r = _search.find_one({'_id': bson.ObjectId(session_r['search_id'])})
-    if not search_r:
-        raise Exception('Search not found')
+    assert search_r, 'Search not found'   
                 
     if not session_r.get('shared', 0):
         if search_r['username'] != session.get('username', ''):
@@ -455,13 +451,11 @@ def analyze(session_id=''):
 
             session_r = _session.find_one(
                 {'_id': bson.ObjectId(session_id)})
-            if not session_r:
-                raise Exception('Session not found')
+            assert session_r, 'Session not found'
             
             search_r = _search.find_one(
                 {'_id': bson.ObjectId(session_r['search_id'])})
-            if not search_r:
-                raise Exception('Search not found')
+            assert search_r, 'Search not found'
               
             language = search_r['language']  
             
@@ -540,7 +534,7 @@ def analyze(session_id=''):
         api_params = {'include_entities': True}
         
         if query:
-            api_method = api.search            
+            api_method = api.search  
             api_params['q'] = query
             api_params['lang'] = language
             api_params['result_type'] = 'recent'
@@ -717,10 +711,9 @@ def analyze(session_id=''):
         session_r['since_id'] = max(tweet_ids)
         session_r['max_id'] = str(int(min(tweet_ids)) - 1) 
         session_r['tweet_count'] += tweet_count
-
-        session_r['stem_counter'] = stem_counter.most_common()
-    
+        session_r['stem_counter'] = stem_counter.most_common()    
         session_r['stem_map'] = {}
+        
         for stem, c in stem_map.iteritems():
             session_r['stem_map'][stem] = c.most_common()
                  
@@ -742,21 +735,20 @@ def filter(session_id):
     Get histogram and tweets
     
     @filter: comma-delimited list of elements to filter by
-        if element starts with '#', then it is a hashtag
-        else, it is a stem
+        if element starts with '#', it is treated as a hashtag
+        if element starts with '@', it is treated as a voice
+        else, it is treated as a stem
     """
     try:
         _require_session_access(session_id)
 
         session_r = _session.find_one(
             {'_id': bson.ObjectId(session_id)})
-        if not session_r:
-            raise Exception('Session not found')
+        assert session_r, 'Session not found'
             
         search_r = _search.find_one(
             {'_id': bson.ObjectId(session_r['search_id'])})
-        if not search_r:
-            raise Exception('Search not found')
+        assert search_r, 'Search not found'
                         
         # Find tweets
         params = {'session_id': session_id}
@@ -813,19 +805,25 @@ def filter(session_id):
             stem_counter.update(tweet['stems'])
             hashtag_counter.update(tweet['hashtags'])
             url_counter.update(tweet['urls'])
-            voice_counter.update(tweet['voices'])
+            
+            try:
+                voice_counter.update(tweet['voices'])
+            except KeyError:
+                pass # backwards compatibility
             
             if tweet['id_str'] in id_set:
                 retweets += 1
                 continue
             id_set.add(tweet['id_str'])
           
-            if 'retweeted_status' in tweet:
+            try:
                 retweeted_id = tweet['retweeted_status']['id_str']
                 if retweeted_id in id_set:
                     retweets += 1
                     continue              
                 id_set.add(retweeted_id)
+            except KeyError:
+                pass
                     
             tweets.append({
                 'text': tweet['embed'],
