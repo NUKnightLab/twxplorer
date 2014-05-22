@@ -226,7 +226,6 @@ def _get_list_map():
         for r in list_r['lists']:
             list_map[r['id_str']] = r['full_name']
     return list_map
-    
   
 def _get_saved_results(params=None):
     """
@@ -432,6 +431,38 @@ def _process_tokens(tokens, stemmer, n):
     grams = nltk.ngrams(tokens, n)
     stems = extract.stems_from_grams(grams, stemmer)
     return grams, stems
+
+@app.route("/doit/<query>/", methods=['GET', 'POST'])
+def doit(query=''):
+    try:
+        api = tweepy.API(get_oauth()) 
+        
+        # Get list members
+        # "95929407" => @jywsn/sports
+        # "95560590" => @jywsn/news        
+        member_result = api.list_members(list_id='95929407')
+        froms = ['from:'+u.screen_name for u in member_result]
+        
+        if not froms:
+            raise Exception('No members in specified list')
+        
+        q = '%s AND (%s)' % (query, ' OR '.join(froms))
+        
+        print 'QUERY', q
+        
+        tweets_result = api.search(
+            count=100, lang='en', result_type='recent', q=q)    
+   
+        for tweet in tweets_result:
+            print '=============================='
+            print tweet.user.screen_name, tweet.text
+            
+    except tweepy.TweepError, e:
+        traceback.print_exc()
+        return _jsonify(error=e.message[0]['message'])        
+    except Exception, e:
+        traceback.print_exc()
+        return _jsonify(error=str(e))
 
 
 @app.route("/analyze/", methods=['GET', 'POST'])
