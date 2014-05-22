@@ -820,7 +820,7 @@ def filter(session_id):
                 'hashtags': 1,
                 'urls': 1,
                 'voices': 1
-            }, sort=[('dt', pymongo.DESCENDING)])
+            }, sort=[('created_at', pymongo.DESCENDING)])
         
         # Process tweets
         stem_counter = Counter()
