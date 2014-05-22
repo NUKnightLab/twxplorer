@@ -104,7 +104,9 @@ function show_filter() {
     $('#filter_list').html(s).show();
 }
 
-// Get the term to represent filter item in UI
+// Get the term to represent filter item s in UI
+// old: stem_map = {"stem": ["term"]}
+// new: stem_map = {"stem": [["term", n]]}
 function get_term(s) {
     if(s[0] == '#') {
         return s;
@@ -113,10 +115,15 @@ function get_term(s) {
         return _url_map[s];  
     }
     if(s in _session.stem_map) { 
-        if(_session.stem_map[s].length > 1) {
-            return _session.stem_map[s][0][0]+', ...';
+        var t = _session.stem_map[s][0];
+        
+        if(typeof(t) != "string") {
+            t = t[0];
         } 
-        return _session.stem_map[s][0][0];
+        if(_session.stem_map[s].length > 1) {
+            return t+', ...';
+        } 
+        return t;
     }
     return s;
 }
