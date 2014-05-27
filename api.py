@@ -226,7 +226,42 @@ def _get_list_map():
         for r in list_r['lists']:
             list_map[r['id_str']] = r['full_name']
     return list_map
-  
+ 
+def _update_list_map():
+    """
+    Update the list map for username
+    """
+    username = session['username']
+    delta = datetime.timedelta(minutes=15)
+    refresh = False
+    
+    list_r = _list.find_one({'username': username})
+    if not list_r:
+        list_r = {'username': username}
+        refresh = True
+    elif (list_r['dt'] + delta) < datetime.datetime.now():
+        refresh = True
+    elif request.args.get('refresh'):
+        refresh = True
+    
+    if refresh:
+        api = tweepy.API(get_oauth())
+       
+        lists = []
+        for r in api.lists_all(screen_name=username):
+            lists.append({
+                'id_str': r.id_str,
+                'slug': r.slug,
+                'name': r.name,
+                'full_name': r.full_name,
+                'owned': (r.user.screen_name.lower() == username.lower())
+            })
+            print lists[-1]
+        list_r['dt'] = datetime.datetime.now()
+        list_r['lists'] = lists       
+        list_r['_id'] = _list.save(list_r, manipulate=True)
+
+     
 def _get_saved_results(params=None):
     """
     Get saved results matching params, grouped by search
@@ -325,6 +360,8 @@ def search(session_id=''):
         if logged_in:     
             saved_results, unused = _get_saved_results(
                 {'list_id': {'$exists': False}})
+            
+            _update_list_map()
 
         if session_id:
             snapshot_owner = _require_session_access(session_id)
@@ -392,9 +429,6 @@ def lists(session_id=''):
             _require_session_access(session_id)
         elif not logged_in:
             return redirect(url_for('index'))
-
-        # DEBUG
-        #list_r['lists'] = []
                     
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, saved_results=saved_results,
@@ -764,11 +798,11 @@ def analyze(session_id=''):
 def filter(session_id):
     """
     Get histogram and tweets
-    
-    @filter: comma-delimited list of elements to filter by
-        if element starts with '#', it is treated as a hashtag
-        if element starts with '@', it is treated as a voice
-        else, it is treated as a stem
+        
+    @stems: comma-delimited list of term stems to filter by
+    @hashtags: ... 
+    @urls: ...
+    @voices: ...
     """
     try:
         _require_session_access(session_id)
@@ -784,22 +818,11 @@ def filter(session_id):
         # Find tweets
         params = {'session_id': session_id}
         
-        filter = request.args.getlist('filter[]')
-        filter_stems = []
-        filter_hashtags = []       
-        filter_urls = []
-        filter_voices = []
-        
-        for element in filter:
-            if element.startswith('#'):
-                filter_hashtags.append(element)
-            elif element.startswith('http'):
-                filter_urls.append(element)
-            elif element.startswith('@'):
-                filter_voices.append(element)
-            else:
-                filter_stems.append(element)
-                
+        filter_stems = request.args.getlist('stem[]') or []
+        filter_hashtags = request.args.getlist('hashtag[]') or []      
+        filter_urls = request.args.getlist('url[]') or []
+        filter_voices = request.args.getlist('voice[]') or []
+                         
         if filter_urls:
             params['urls'] = {'$all': filter_urls}
         if filter_stems:

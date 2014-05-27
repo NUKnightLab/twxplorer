@@ -72,7 +72,7 @@
                 <div class="filter-container">
                     <ul id="filter_list" class="filter-list"></ul>
                 </div>
-                <a onclick="clear_filters();" class="internal"><span id="current_term"></span></a>
+                <a onclick="clear_filters(true);" class="internal"><span id="current_term"></span></a>
             </li>
             <li><span id="tweet_count"></span> </li>
             <li><button type="button" class="btn btn-link" id="more" style="display: none;">Get More Tweets</button></li>
@@ -100,17 +100,7 @@
                 </div>
             </div>
             <div class="span5 frame">
-                <div class="frame-header">Hashtags
-                    <!-- filters in headers -->
-<!--
-                    <div class="filter-container">
-                        <ul id="hashtag_filters" class="filter-list">
-                            <li>#chicagobulls<button class="close">&times;</button></li>
-                            <li>#whitesox<button class="close">&times;</button></li>
-                        </ul>
-                    </div>   
--->            
-                </div>
+                <div class="frame-header">Hashtags</div>
                 <div class="frame-body">
                    <ul id="hashtags" class="unstyled histogram-container">
                      <!-- hashtags go here -->
@@ -149,25 +139,30 @@
 
 var _session = {};
 var _url_map = {};
+// TODO add _list_map
 
-var _filter = [];   // current filter      
+var _filter = {
+    'stem': [],
+    'hashtag': [],
+    'url': [],
+    'voice': []
+};
 
+var _TweetsLoader;
 var _TermsLoader;
 var _HashtagsLoader;
-var _TweetsLoader;
 var _UrlsLoader;
+var _VoiceLoader;
 
 //
 // Get stats and tweets for session_id using _filter
 //
 
 function filter_results(session_id, callback) { 
-    show_filter(); 
-    
     $('#terms, #hashtags, #urls, #voices, #tweets, #tweet_count, #timestamp').html('');
         
     do_ajax('/filter/'+session_id+'/', 
-        {filter: _filter},
+        _filter,
         function(err) {
             show_error('Error filtering results ('+err+')');
             if(callback) {
@@ -234,7 +229,6 @@ $(function() {
        
     $('#more').click(function(event) {
         hide_error();
-
         show_progress('Searching Twitter');
        
         do_ajax("{{ url_for('analyze') }}"+_session._id,
@@ -243,15 +237,15 @@ $(function() {
                 show_error('Error executing search ('+error+')');
                 hide_progress();
             },
-            function(data) {
-                _filter = [];
+            function(data) {                
                 if (data.session.tweet_count > 0) {  
-                  filter_results(data.session._id, function() {
-                      hide_progress();
-                  });
+                    clear_filters(false);                    
+                    filter_results(data.session._id, function() {
+                        hide_progress();
+                    });
                 } else {
-                  show_warning("No tweets found matching '" + query + "'.")
-                  hide_progress();
+                    show_warning("No tweets found matching '"+query+"'.")
+                    hide_progress();
                 }
             }
         );
@@ -275,16 +269,17 @@ $(function() {
                 hide_progress();
             },
             function(data) {   
-                _filter = [];
+                clear_filters(false);
+                
                 if (data.session.tweet_count > 0) {  
-                  filter_results(data.session._id, function() {
-                      hide_progress();
-                  });
+                    filter_results(data.session._id, function() {
+                        hide_progress();
+                    });
 
-                  $('#more, #save').show();
+                    $('#more, #save').show();
                 } else {
-                  show_warning("No tweets found matching '" + query + "'.")
-                  hide_progress();
+                    show_warning("No tweets found matching '" + query + "'.")
+                    hide_progress();
                 }
             }
         );

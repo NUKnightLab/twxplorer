@@ -1,5 +1,4 @@
-// utility.js
-//
+// common.js
 
 function show_error(error) {      
     if($('#error_alert').length) {
@@ -69,26 +68,49 @@ function do_ajax(url, data, on_error, on_success) {
     });
 }
 
-function add_filter(stem) {
-    _filter.push(stem);
-    filter_results(_session._id);
-}
+//
+// filtering
+//
 
-function remove_filter(stem) {
-    var stem_index = $.inArray(stem, _filter);
-    if(stem_index > -1) {
-        _filter.splice(stem_index, 1);
+function add_filter(key, stem) {
+    if(!(key in _filter)) {
+        _filter[key] = []
     }
+    _filter[key].push(stem);
+    
+    $('#filter_list').append(''
+        + '<li>'+get_term(stem)
+        + '<button class="close" onclick="remove_filter(this, \''+key+'\', \''+stem.replace("'", "\\&apos;")+'\');">&times;</button>'
+        + '</li>');
+    
     filter_results(_session._id);
 }
 
-function clear_filters() {
-    if(_filter.length > 0){
-        _filter = []
+function remove_filter(elem, key, stem) {
+    $(elem).closest('li').remove();
+    
+    if(key in _filter) {    
+        var stem_index = $.inArray(stem, _filter[key]);
+        if(stem_index > -1) {
+            _filter[key].splice(stem_index, 1);
+            filter_results(_session._id);
+        }
+    }
+}
+
+function clear_filters(reload) {
+    $('#filter_list').html('');
+    
+    for(var key in _filter) {
+        _filter[key] = [];
+    }
+    
+    if(reload) {
         filter_results(_session._id);
     }
 }
 
+/* don't do this anymore 
 function show_filter() {   
     var s = '';
     
@@ -103,6 +125,7 @@ function show_filter() {
     
     $('#filter_list').html(s).show();
 }
+*/
 
 // Get the term to represent filter item s in UI
 // old: stem_map = {"stem": ["term"]}
@@ -199,7 +222,7 @@ function initialize() {
                     }
                                
                     html += ''
-                        + '<li class="term" onclick="add_filter(\''+stem.replace("'", "\\&apos;")+'\');">'
+                        + '<li class="term" onclick="add_filter(\'stem\', \''+stem.replace("'", "\\&apos;")+'\');">'
                         + '<span class="count">'+count+'</span>'
                         + '<div class="inner">'
                         + anchor+get_term(stem, ', ')+'</a>'
@@ -216,9 +239,7 @@ function initialize() {
             $('#terms a[data-toggle="tooltip"]').slice(-count).tooltip();        
         }
     );
-
-
-     
+    
     _HashtagLoader = new Loader($('#hashtags'), 20,
         function(hashtag_counts, callback) {
             var hashtag, count, html = '';
@@ -231,7 +252,7 @@ function initialize() {
                     var pct = (count * 100)/max_count;
                                     
                     html += ''
-                        + '<li class="term" onclick="add_filter(\''+hashtag+'\');">'
+                        + '<li class="term" onclick="add_filter(\'hashtag\', \''+hashtag+'\');">'
                         + '<span class="count">'+count+'</span>'
                         + '<div class="inner">'
                         + '<a>'+hashtag+'</a>'
@@ -259,7 +280,7 @@ function initialize() {
                     var pct = (count * 100)/max_count;
             
                     html += ''
-                        + '<li class="term" onclick="add_filter(\''+voice+'\');">'
+                        + '<li class="term" onclick="add_filter(\'voice\', \''+voice+'\');">'
                         + '<span class="count">'+count+'</span>'
                         + '<div class="inner">'
                         + '<a>'+voice+'</a>'
@@ -318,7 +339,7 @@ function initialize() {
                                 + '<li>'
                                 + '<span class="count">'+url_counts[i][1]+'</span>'
                                 + '<div>'
-                                + '<a href="javascript:void(0);" onclick="add_filter(\''+info.url+'\');">'+ _url_map[info.url] +'</a>'
+                                + '<a href="javascript:void(0);" onclick="add_filter(\'url\', \''+info.url+'\');">'+ _url_map[info.url] +'</a>'
                                 + '<a class="external-link" href="'+info.url+'" target="_blank" title="open url in new window">'
                                 + '<i class="icon-external-link"></i></a>'
                                 + '</div>';
