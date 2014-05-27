@@ -386,7 +386,7 @@ def search(session_id=''):
             lists=list_list, list_map=json.dumps(list_map))
     except Exception, e:
         traceback.print_exc()
-        return render_template('search.html', session_id=session_id,
+        return render_template('search.html', session_id=session_id, log=logg,
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results,
             error=str(e))
