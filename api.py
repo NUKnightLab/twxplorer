@@ -353,27 +353,34 @@ def search(session_id=''):
     """
     Search by query page
     """
+    logg= ''
+    
     try:
+        logg += 'is_logged_in()\n'
         logged_in = is_logged_in()
         saved_results = []
         snapshot_owner = ''
         
         if logged_in:     
+            logg += '_get_saved_results()\n'
             saved_results, unused = _get_saved_results(
                 {'list_id': {'$exists': False}}) 
                           
+            logg += '_update_list_map()\n'
             list_r = _update_list_map()
+            logg += '_get_list_map()\n'
             list_map = _get_list_map()
             
             # only interested in owned lists
             list_list = [x for x in list_r['lists'] if x['owned']]
 
+        logg += '_require_session_access()\n'
         if session_id:
             snapshot_owner = _require_session_access(session_id)
         elif not logged_in:
             return redirect(url_for('index'))
         
-        return render_template('search.html', session_id=session_id,
+        return render_template('search.html', session_id=session_id, log=logg,
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_list, list_map=json.dumps(list_map))
