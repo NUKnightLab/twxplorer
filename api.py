@@ -391,8 +391,8 @@ def search(session_id=''):
         
         logg += 'TweepError\n'
         
-        for a, v in e.__dict__.iteritems():
-            logg += a+' = '+(v or '')+'\n'
+        #for a, v in e.__dict__.iteritems():
+        #    logg += a+' = '+(v or '')+'\n'
 
         return render_template('search.html', session_id=session_id, log=logg,
             snapshot_owner=snapshot_owner,
