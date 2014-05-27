@@ -386,6 +386,12 @@ def search(session_id=''):
             lists=list_list, list_map=json.dumps(list_map))
     except Exception, e:
         traceback.print_exc()
+        
+        # check for invalid or expired token
+        if e.hasOwnProperty('message') and e.hasOwnProperty('code') \
+        and e.message == 'Invalid or expired token' and e.code == 89:
+            logg += 'INVALID TOKEN'
+                        
         return render_template('search.html', session_id=session_id, log=logg,
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results,
