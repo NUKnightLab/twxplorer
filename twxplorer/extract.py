@@ -136,7 +136,12 @@ def stems_from_grams(grams, stemmer):
         )
     return stems
 
-            
+def process_tokens(tokens, stemmer, n):
+    """Get n-grams and stems for tokens using stemmer"""
+    grams = nltk.ngrams(tokens, n)
+    stems = stems_from_grams(grams, stemmer)
+    return grams, stems
+              
     
 
     

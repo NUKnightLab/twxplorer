@@ -13,7 +13,6 @@ import traceback
 import datetime
 import bson
 import tweepy
-from tweepy.error import TweepError
 import pymongo
 import urllib2
 import urllib
@@ -44,26 +43,7 @@ settings = sys.modules[settings_module]
 
 html_parser = lxml.html.HTMLParser(encoding='utf-8')
 
-
-def is_logged_in():
-    """
-    Is the user logged in or not?
-    """
-    oauth = get_oauth()
-    return oauth.request_token != None and oauth.access_token != None
-
-
-def login_required(f):
-    """
-    Decorator for login required
-    """
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not is_logged_in():
-            return redirect(url_for('index'))
-            #return redirect(url_for('index', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
+auth_version = '2'    # arbitrary auth version, 2 = read-write 05/2014
 
 
 @app.context_processor
@@ -105,17 +85,34 @@ def _jsonify(*args, **kwargs):
 # Auth
 #
 
+def _clean_session(all=False):
+    """
+    Clean out auth-related session data
+    """
+    key_list = ['access_token_key', 'access_token_secret', 'username', 'language']   
+    if all:
+        key_list.extend(['request_token_key', 'request_token_secret'])
+    for key in key_list:
+        if key in session:
+            session.pop(key)
+
 def get_oauth():
     """
     Get a tweepy OAuthHander
     """
     cb_url = 'http://'+request.host+url_for('auth_verify')
     
+    # Create the oauth handler
     oauth = tweepy.OAuthHandler(
         settings.TWITTER_CONSUMER_KEY,
         settings.TWITTER_CONSUMER_SECRET,
         callback=cb_url,
         secure=True)
+    
+    # Check version and, if old, clean session
+    version = session.get('request_token_version') or ''    
+    if version < auth_version:
+        _clean_session()
     
     key = session.get('request_token_key')
     secret = session.get('request_token_secret')
@@ -132,8 +129,7 @@ def get_oauth():
             if username:
                 session['username'] = username.lower()
     return oauth
-    
-    
+      
 @app.route("/auth/", methods=['GET', 'POST'])
 def auth():
     """
@@ -165,8 +161,29 @@ def auth_verify():
         session['language'] = user_obj.lang
     except:
         session['language'] = 'en'
-
+        
+    # Set version
+    session['request_token_version'] = auth_version
+    
     return redirect(url_for('search'))  
+
+def is_logged_in():
+    """
+    User logged in or not?
+    """
+    oauth = get_oauth()
+    return oauth.request_token != None and oauth.access_token != None
+
+def login_required(f):
+    """
+    Decorator for login required
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_logged_in():
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @app.route('/logout/')
@@ -174,15 +191,12 @@ def logout():
     """
     Logout by cleaning session
     """
-    for key in ['request_token_key', 'request_token_secret', \
-        'access_token_key', 'access_token_secret', 'username']:
-        if key in session:
-            session.pop(key)
+    _clean_session(all=True)
     return redirect(url_for('index'))
 
-         
+      
 #
-# Main views
+# Misc
 #
     
 def _require_session_owned(session_id):
@@ -202,7 +216,7 @@ def _require_session_owned(session_id):
     
 def _require_session_access(session_id):
     """
-    Require that the session is shared or owned by the logged in user
+    Require that the session is owned by the logged in user or shared
     """
     session_r = _session.find_one({'_id': bson.ObjectId(session_id)})
     assert session_r, 'Session not found'   
@@ -216,10 +230,9 @@ def _require_session_access(session_id):
         
     return search_r['username']
         
-
 def _get_list_map():
     """
-    Return list map for username (id => full_name)
+    Return list map for logged in user (id => full_name)
     """
     list_r = _list.find_one({'username': session['username']})
     list_map = {}
@@ -230,7 +243,7 @@ def _get_list_map():
  
 def _update_list_map():
     """
-    Update the list map for username
+    Update the list map for logged in user
     """
     username = session['username']
     delta = datetime.timedelta(minutes=15)
@@ -327,6 +340,10 @@ def _shorten_url(url):
         else:
             print "bitly error: %s" % response['status_txt']  
     return url
+
+#
+# Main views
+#
         
 @app.route("/about/", methods=['GET', 'POST'])
 def about(name=''):
@@ -341,6 +358,8 @@ def index(name=''):
     Main page
     """    
     try:
+        logged_in = is_logged_in()
+         
         return render_template('index.html')
     except Exception, e:
         traceback.print_exc()
@@ -354,60 +373,35 @@ def search(session_id=''):
     """
     Search by query page
     """
-    logg= ''
-    
     try:
-        logg += 'is_logged_in()\n'
         logged_in = is_logged_in()
         saved_results = []
         snapshot_owner = ''
         
         if logged_in:     
-            logg += '_get_saved_results()\n'
             saved_results, unused = _get_saved_results(
                 {'list_id': {'$exists': False}}) 
                           
-            logg += '_update_list_map()\n'
             list_r = _update_list_map()
-            logg += '_get_list_map()\n'
             list_map = _get_list_map()
             
             # only interested in owned lists
             list_list = [x for x in list_r['lists'] if x['owned']]
 
-        logg += '_require_session_access()\n'
         if session_id:
             snapshot_owner = _require_session_access(session_id)
         elif not logged_in:
             return redirect(url_for('index'))
         
-        return render_template('search.html', session_id=session_id, log=logg,
+        return render_template('search.html', session_id=session_id,
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_list, list_map=json.dumps(list_map))
     
-    except TweepError, e:
-        traceback.print_exc()
-        
-        logg += 'TweepError\n'
-        
-        #for a, v in e.__dict__.iteritems():
-        #    logg += a+' = '+(v or '')+'\n'
-
-        return render_template('search.html', session_id=session_id, log=logg,
-            snapshot_owner=snapshot_owner,
-            languages=extract.stopword_languages, saved_results=saved_results,
-            error=str(e))
-        
     except Exception, e:
         traceback.print_exc()
-        
-        # check for invalid or expired token
-        if hasattr(e, 'message') and hasattr(e, 'code') \
-        and e.message == 'Invalid or expired token' and e.code == 89:
-            logg += 'INVALID TOKEN'
-                        
-        return render_template('search.html', session_id=session_id, log=logg,
+                                
+        return render_template('search.html', session_id=session_id,
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results,
             error=str(e))
@@ -439,10 +433,6 @@ def lists(session_id=''):
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_r['lists'], list_map=json.dumps(list_map))
-    except tweepy.TweepError, e:
-        traceback.print_exc()
-        return render_template('lists.html', session_id=session_id,
-            languages=extract.stopword_languages, error=str(e))
     except Exception, e:
         traceback.print_exc()
         return render_template('lists.html', session_id=session_id,
@@ -462,47 +452,6 @@ def history():
     except Exception, e:
         traceback.print_exc()
         return render_template('history.html', error=str(e))
-
-
-def _process_tokens(tokens, stemmer, n):
-    """
-    Get n-grams and stems for tokens
-    """
-    grams = nltk.ngrams(tokens, n)
-    stems = extract.stems_from_grams(grams, stemmer)
-    return grams, stems
-
-@app.route("/doit/<query>/", methods=['GET', 'POST'])
-def doit(query=''):
-    try:
-        api = tweepy.API(get_oauth()) 
-        
-        # Get list members
-        # "95929407" => @jywsn/sports
-        # "95560590" => @jywsn/news        
-        member_result = api.list_members(list_id='95929407')
-        froms = ['from:'+u.screen_name for u in member_result]
-        
-        if not froms:
-            raise Exception('No members in specified list')
-        
-        q = '%s AND (%s)' % (query, ' OR '.join(froms))
-        
-        print 'QUERY', q
-        
-        tweets_result = api.search(
-            count=100, lang='en', result_type='recent', q=q)    
-   
-        for tweet in tweets_result:
-            print '=============================='
-            print tweet.user.screen_name, tweet.text
-            
-    except tweepy.TweepError, e:
-        traceback.print_exc()
-        return _jsonify(error=e.message[0]['message'])        
-    except Exception, e:
-        traceback.print_exc()
-        return _jsonify(error=str(e))
 
 
 @app.route("/analyze/", methods=['GET', 'POST'])
@@ -685,7 +634,7 @@ def analyze(session_id=''):
             stem_list = []
         
             for tokens in tweet['tokens']:
-                grams, stems = _process_tokens(tokens, stemmer, 3)
+                grams, stems = extract.process_tokens(tokens, stemmer, 3)
             
                 for i, g in enumerate(grams):
                     if extract.stoplist_iter(g, stopwords) \
@@ -706,7 +655,7 @@ def analyze(session_id=''):
             stem_list = []
 
             for tokens in tweet['tokens']:
-                grams, stems = _process_tokens(tokens, stemmer, 2)
+                grams, stems = extract.process_tokens(tokens, stemmer, 2)
                 last_i = len(stems) - 1
                                 
                 for i, g in enumerate(grams):
@@ -736,7 +685,7 @@ def analyze(session_id=''):
             stem_list = []
 
             for tokens in tweet['tokens']:
-                grams, stems = _process_tokens(tokens, stemmer, 1)
+                grams, stems = extract.process_tokens(tokens, stemmer, 1)
                 last_i = len(stems) - 1
             
                 for i, g in enumerate(grams):
