@@ -361,8 +361,6 @@ def search(session_id=''):
         logged_in = is_logged_in()
         saved_results = []
         snapshot_owner = ''
-
-        raise TweepError('sksks')
         
         if logged_in:     
             logg += '_get_saved_results()\n'
