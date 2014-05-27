@@ -13,6 +13,7 @@ import traceback
 import datetime
 import bson
 import tweepy
+from tweepy.error import TweepError
 import pymongo
 import urllib2
 import urllib
@@ -361,6 +362,8 @@ def search(session_id=''):
         saved_results = []
         snapshot_owner = ''
 
+        raise TweepError('sksks')
+        
         if logged_in:     
             logg += '_get_saved_results()\n'
             saved_results, unused = _get_saved_results(
@@ -384,6 +387,20 @@ def search(session_id=''):
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_list, list_map=json.dumps(list_map))
+    
+    except TweepError, e:
+        traceback.print_exc()
+        
+        logg += 'TweepError\n'
+        
+        for a, v in e.__dict__.iteritems():
+            logg += a+' = '+(v or '')+'\n'
+
+        return render_template('search.html', session_id=session_id, log=logg,
+            snapshot_owner=snapshot_owner,
+            languages=extract.stopword_languages, saved_results=saved_results,
+            error=str(e))
+        
     except Exception, e:
         traceback.print_exc()
         
