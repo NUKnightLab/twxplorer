@@ -256,12 +256,13 @@ def _update_list_map():
                 'full_name': r.full_name,
                 'owned': (r.user.screen_name.lower() == username.lower())
             })
-            print lists[-1]
+
         list_r['dt'] = datetime.datetime.now()
         list_r['lists'] = lists       
         list_r['_id'] = _list.save(list_r, manipulate=True)
+    
+    return list_r
 
-     
 def _get_saved_results(params=None):
     """
     Get saved results matching params, grouped by search
@@ -359,9 +360,13 @@ def search(session_id=''):
         
         if logged_in:     
             saved_results, unused = _get_saved_results(
-                {'list_id': {'$exists': False}})
+                {'list_id': {'$exists': False}}) 
+                          
+            list_r = _update_list_map()
+            list_map = _get_list_map()
             
-            _update_list_map()
+            # only interested in owned lists
+            list_list = [x for x in list_r['lists'] if x['owned']]
 
         if session_id:
             snapshot_owner = _require_session_access(session_id)
@@ -370,7 +375,8 @@ def search(session_id=''):
         
         return render_template('search.html', session_id=session_id,
             snapshot_owner=snapshot_owner,
-            languages=extract.stopword_languages, saved_results=saved_results)
+            languages=extract.stopword_languages, saved_results=saved_results,
+            lists=list_list, list_map=json.dumps(list_map))
     except Exception, e:
         traceback.print_exc()
         return render_template('search.html', session_id=session_id,
@@ -393,36 +399,8 @@ def lists(session_id=''):
         if logged_in:
             unused, saved_results = _get_saved_results(
                 {'list_id': {'$exists': True}})        
-
-            username = session.get('username')
-            delta = datetime.timedelta(minutes=15)
-            refresh = False
-        
-            list_r = _list.find_one({'username': username})
-            if not list_r:
-                list_r = {'username': username}
-                refresh = True
-            elif (list_r['dt'] + delta) < datetime.datetime.now():
-                refresh = True
-            elif request.args.get('refresh'):
-                refresh = True
-        
-            if refresh:
-                api = tweepy.API(get_oauth())
-
-                lists = []
-                for r in api.lists_all(screen_name=username):
-                    lists.append({
-                        'id_str': r.id_str,
-                        'slug': r.slug,
-                        'name': r.name,
-                        'full_name': r.full_name
-                    })
-            
-                list_r['dt'] = datetime.datetime.now()
-                list_r['lists'] = lists       
-                list_r['_id'] = _list.save(list_r, manipulate=True)
-    
+                
+            list_r = _update_list_map()                  
             list_map = _get_list_map()
 
         if session_id:
@@ -911,6 +889,33 @@ def filter(session_id):
         traceback.print_exc()
         return _jsonify(error=str(e))
   
+
+@app.route("/user/add/", methods=['GET', 'POST'])
+@login_required
+def user_add():
+    """
+    Add user to lists
+    
+    @screen_name = screen_name of user to add
+    @list_ids = list of list ids
+    """
+    try:    
+        screen_name = request.args.get('screen_name')
+        assert screen_name, 'No screen name specified'
+                     
+        list_ids = request.args.getlist('list_ids[]') or []
+        assert list_ids, 'No list ids specified'
+                
+        api = tweepy.API(get_oauth())
+     
+        for id in list_ids:
+            api.add_list_member(list_id=id, screen_name=screen_name)
+    
+        return _jsonify(error='')
+    except Exception, e:
+        traceback.print_exc()
+        return _jsonify(error=str(e))
+
  
 @app.route("/history/update/<session_id>/", methods=['GET', 'POST'])
 @login_required
@@ -979,9 +984,8 @@ def history_tweet(session_id):
     tweetUrl = 'https://twitter.com/share?'+urllib.urlencode({
         'text': msg, 'url': 'false' })
         
-    return redirect(tweetUrl)
-      
-      
+    return redirect(tweetUrl)    
+       
 @app.route("/history/delete/", methods=['GET', 'POST'])
 @login_required
 def history_delete():

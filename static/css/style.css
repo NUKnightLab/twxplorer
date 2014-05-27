@@ -51,6 +51,11 @@ ALERTS/MODALS
 .internal {
     cursor: pointer;
 }
+
+#add_modal {width: 400px;}
+#add_modal, #add_modal select {font-size: 14px;}
+#add_modal .add_username {font-weight: bold;}
+
 /* 
 FILTERS
 */
@@ -149,6 +154,20 @@ ul.inline.breadcrumbs li {
     padding: 5px 5px 3px 6px;
     text-align: right;
 }  
+
+.histogram-container .add {
+    border-radius: 2px 2px 2px 2px;
+    color: #666666;
+    float: right;
+    margin: 2px 0 0 0; 
+    min-width:  28px; 
+    padding: 5px 5px 3px 6px;
+    text-align: right;    
+}
+
+.histogram-container .add a:hover,
+.histogram-container .add:hover a{text-decoration: underline;}
+
 
 
 #terms a,

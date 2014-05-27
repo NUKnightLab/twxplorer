@@ -132,6 +132,26 @@
 
 </div>
 
+
+<div id="add_modal" class="modal hide fade" role="dialog">
+    <div class="modal-body">
+        <p>Add <span class='add_username'></span> to selected lists:</p>           
+        <form>
+            <select id="add_list" multiple="multiple" class="span4">
+{% for list in lists if list.owned %}
+            <option value='{{ list.id_str }}'>{{ list.full_name }}</option>
+{% endfor %}
+            </select>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal">Cancel</button>
+        <button id="add_user" class="btn btn-primary" data-dismiss="modal" >Add</button>
+    </div>
+</div>
+
+
+
 {% endblock %}
 
 {% block script %}
@@ -153,6 +173,9 @@ var _TermsLoader;
 var _HashtagsLoader;
 var _UrlsLoader;
 var _VoiceLoader;
+
+
+var _has_lists = {{ lists|length }};
 
 //
 // Get stats and tweets for session_id using _filter
@@ -333,6 +356,35 @@ $(function() {
     
             return false;
         });
+        
+    // Add user to list
+    
+    $('#add_list').change(function(event) {
+        if($('#add_list option:selected').length) {
+            $('#add_user').removeAttr('disabled');
+        } else {
+            $('#add_user').attr('disabled', 'disabled');
+        }
+    });
+    
+    $('#add_user').click(function(event) {
+        var screen_name = $('#add_modal .add_username').text();
+        var list_ids = [];
+        
+        $('#add_list option:selected').each(function() {
+            list_ids.push($(this).attr('value'));
+        });    
+        
+        do_ajax('/user/add/', 
+            {screen_name: screen_name, list_ids: list_ids},
+            function(error) {
+                show_error('Error adding user to list(s) ('+error+')');
+            },
+            function(data) {  
+                // noop
+            }
+        );       
+    });
 
     $(document).click(function (e) {
         if(($('.popover').has(e.target).length == 0) || $(e.target).is('.close')) {

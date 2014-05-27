@@ -49,6 +49,23 @@ function show_warning(message) {
     }
 }
 
+
+function show_add(event, username) {
+    event = event || window.event;
+    
+    if(event.stopPropagation) {
+        event.stopPropagation();
+    } else {
+        event.cancelBubble = true;
+    }
+        
+    $('#add_modal .add_username').html(username);
+    $('#add_list option').attr('selected', false);
+    $('#add_user').attr('disabled', 'disabled');
+    $('#add_modal').modal('show');
+}
+
+
 function do_ajax(url, data, on_error, on_success) {
     $.ajax({
         url: url,
@@ -109,23 +126,6 @@ function clear_filters(reload) {
         filter_results(_session._id);
     }
 }
-
-/* don't do this anymore 
-function show_filter() {   
-    var s = '';
-    
-    if(_filter.length > 0) {
-       s = '<li class="blank">&nbsp; Filters: </li>';
-    }
-    for(var i = 0; i < _filter.length; i++) {
-        s += '<li>'+get_term(_filter[i])
-            + '<button class="close" onclick="remove_filter(\''+_filter[i].replace("'", "\\&apos;")+'\');">&times;</button>'
-            + '</li>';      
-    }
-    
-    $('#filter_list').html(s).show();
-}
-*/
 
 // Get the term to represent filter item s in UI
 // old: stem_map = {"stem": ["term"]}
@@ -280,8 +280,16 @@ function initialize() {
                     var pct = (count * 100)/max_count;
             
                     html += ''
-                        + '<li class="term" onclick="add_filter(\'voice\', \''+voice+'\');">'
-                        + '<span class="count">'+count+'</span>'
+                        + '<li class="term" style="position: relative;" onclick="add_filter(\'voice\', \''+voice+'\');">'
+                        + '<span class="count">'+count+'</span>';
+                    
+                    if(_has_lists) {
+                        html += ''
+                            + '<span class="add"><a href="javascript:" title="Add to list" onclick="show_add(event, \''+voice+'\');">'
+                            + '<i class="icon-plus"></i></a></span>';
+                    }
+                    
+                    html += ''
                         + '<div class="inner">'
                         + '<a>'+voice+'</a>'
                         + '<div class="bar" style="width: '+pct+'%;">&nbsp;</div>'
