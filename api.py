@@ -360,7 +360,7 @@ def search(session_id=''):
         logged_in = is_logged_in()
         saved_results = []
         snapshot_owner = ''
-        
+
         if logged_in:     
             logg += '_get_saved_results()\n'
             saved_results, unused = _get_saved_results(
@@ -388,7 +388,7 @@ def search(session_id=''):
         traceback.print_exc()
         
         # check for invalid or expired token
-        if e.hasOwnProperty('message') and e.hasOwnProperty('code') \
+        if hasattr(e, 'message') and hasattr(e, 'code') \
         and e.message == 'Invalid or expired token' and e.code == 89:
             logg += 'INVALID TOKEN'
                         
