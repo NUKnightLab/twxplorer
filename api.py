@@ -356,6 +356,8 @@ def lists(session_id=''):
     """
     try:
         logged_in = is_logged_in()
+        list_r = {'lists': []}
+        list_map = {}
         saved_results = []
 
         if logged_in:
@@ -397,10 +399,7 @@ def lists(session_id=''):
             _require_session_access(session_id)
         elif not logged_in:
             return redirect(url_for('index'))
-
-        # DEBUG
-        #list_r['lists'] = []
-                    
+                
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_r['lists'], list_map=json.dumps(list_map))
