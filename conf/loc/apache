@@ -1,0 +1,14 @@
+<VirtualHost *:80>
+    ServerName twxplorer
+    ServerAlias twxplorer
+    ServerAdmin admin@knightlab.com
+    ErrorLog /var/log/apache2/twxplorer.log
+
+    LogLevel info
+
+    SetEnvIf X-Forwarded-Protocol "^https$" HTTPS=on
+
+    WSGIDaemonProcess twxplorer display-name=%{GROUP} maximum-requests=10000
+    WSGIProcessGroup twxplorer
+    WSGIScriptAlias / /home/chris/projects/NUKnightLab/twxplorer/conf/prd/wsgi.py
+</VirtualHost>
