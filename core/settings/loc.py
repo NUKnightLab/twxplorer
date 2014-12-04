@@ -17,14 +17,6 @@ from secrets import *
 # TWITTER_CONSUMER_KEY = 'consumer key'
 # TWITTER_CONSUMER_SECRET = 'consumer secret'
 
-# Set static URL
-STATIC_URL = '/static/'
-
-# Database
-MONGODB_HOST = 'localhost'
-MONGODB_PORT = 27017
-MONGODB_NAME = 'twxplorer'
-
 # Flask configuration
 # This doesn't need to be in the secrets path, but a flask config module commonly has a SECRET_KEY value
 # which should not be made public, so the Knight Lab puts that in the private "secrets" repository as well.
@@ -33,3 +25,6 @@ MONGODB_NAME = 'twxplorer'
 # Twxplorer has no special requirements for what goes in this file, but Flask will want you to have a SECRET_KEY
 # and you may want to set the DEBUG flag to True
 os.environ['FLASK_CONFIG_MODULE'] = os.path.join(secrets_path, 'flask_config.py')
+
+# Set static URL
+STATIC_URL = '/static/'

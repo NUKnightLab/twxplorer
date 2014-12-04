@@ -8,13 +8,18 @@ secrets_path = os.path.normpath(os.path.join(PROJECT_ROOT, '../secrets/twxplorer
 sys.path.append(secrets_path)
 from secrets import *
 
+# Flask configuration
+os.environ['FLASK_CONFIG_MODULE'] = os.path.join(secrets_path, 'flask_config.py')
+
 # Set static URL
 STATIC_URL = 'http://media.knilab.com/twxplorer/'
 
-# Database
-MONGODB_HOST = 'stg-mongo1.knilab.com'
-MONGODB_PORT = 27017
-MONGODB_NAME = 'twxplorer'
-
-# Flask configuration
-os.environ['FLASK_CONFIG_MODULE'] = os.path.join(secrets_path, 'flask_config.py')
+# Set databases
+DATABASES = {
+    'default': {
+        'ENGINE': 'mongo',
+        'NAME': 'twxplorer',
+        'HOST': 'stg-mongo1.knilab.com',
+        'PORT': 27017,
+    }
+}
