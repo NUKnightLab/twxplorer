@@ -110,6 +110,7 @@ def get_oauth():
     """
     cb_url = 'http://'+request.host+url_for('auth_verify')
     
+    # Create the oauth handler
     oauth = tweepy.OAuthHandler(
         settings.TWITTER_CONSUMER_KEY,
         settings.TWITTER_CONSUMER_SECRET,
@@ -131,7 +132,6 @@ def get_oauth():
             if username:
                 session['username'] = username.lower()
     return oauth
-    
     
 @app.route("/auth/", methods=['GET', 'POST'])
 def auth():
@@ -181,7 +181,7 @@ def logout():
 
          
 #
-# Main views
+# Misc
 #
     
 def _require_session_owned(session_id):
@@ -203,7 +203,7 @@ def _require_session_owned(session_id):
     
 def _require_session_access(session_id):
     """
-    Require that the session is shared or owned by the logged in user
+    Require that the session is owned by the logged in user or shared
     """
     session_r = _session.find_one({'_id': bson.ObjectId(session_id)})
     if not session_r:
@@ -219,10 +219,9 @@ def _require_session_access(session_id):
         
     return search_r['username']
         
-
 def _get_list_map():
     """
-    Return list map for username (id => full_name)
+    Return list map for logged in user (id => full_name)
     """
     list_r = _list.find_one({'username': session['username']})
     list_map = {}
@@ -295,6 +294,10 @@ def _shorten_url(url):
         else:
             print "bitly error: %s" % response['status_txt']  
     return url
+        
+#
+# Main views
+#
         
 @app.route("/about/", methods=['GET', 'POST'])
 def about(name=''):
@@ -475,7 +478,7 @@ def analyze():
             search_r['_id'] = _search.save(search_r, manipulate=True)
         search_id = str(search_r['_id'])
         
-        # Create new search session
+        # Create search session
         session_r = {
             'search_id': search_id,
             'dt': datetime.datetime.now().isoformat(),
@@ -847,7 +850,6 @@ def history_tweet(session_id):
         'text': msg, 'url': 'false' })
         
     return redirect(tweetUrl)
-      
       
 @app.route("/history/delete/", methods=['GET', 'POST'])
 @login_required

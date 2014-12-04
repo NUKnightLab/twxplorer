@@ -1,5 +1,4 @@
-// utility.js
-//
+// common.js
 
 function show_error(error) {      
     if($('#error_alert').length) {
@@ -144,7 +143,6 @@ function tweet_snapshot() {
 }
 
 function initialize() {
-
     //
     // #save handler
     //
