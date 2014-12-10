@@ -12,5 +12,5 @@ nltk==2.0.4
 paramiko==1.11.0
 pycrypto==2.6
 pymongo==2.5.2
-tweepy==2.1
+tweepy==2.3.0
 wsgiref==0.1.2
