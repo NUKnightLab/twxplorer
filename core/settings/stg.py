@@ -19,7 +19,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mongo',
         'NAME': 'twxplorer',
-        'HOST': 'stg-mongo1.knilab.com',
+        'HOST': 'stage-mongo1.knilab.com',
         'PORT': 27017,
     }
 }
