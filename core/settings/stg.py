@@ -12,7 +12,7 @@ from secrets import *
 os.environ['FLASK_CONFIG_MODULE'] = os.path.join(secrets_path, 'flask_config.py')
 
 # Set static URL
-STATIC_URL = 'http://media.knilab.com/twxplorer/'
+STATIC_URL = '//media.knilab.com/twxplorer/'
 
 # Set databases
 DATABASES = {
