@@ -11,7 +11,7 @@ init_env_common:
   DB_NAME__DEFAULT: "{{ project_name }}"
   DB_HOST__DEFAULT: "prod-mongo1.knilab.com"
   DB_PORT__DEFAULT: "27017"
-  FLASK_SETTINGS_MODULE: "core.setings.ec2"
+  FLASK_SETTINGS_MODULE: "core.settings.ec2"
   FLASK_SECRET_KEY: "{{ vault_flask_secret_key }}"
   TWITTER_CONSUMER_KEY: "{{ vault_twitter_consumer_key }}"
   TWITTER_CONSUMER_SECRET: "{{ vault_twitter_consumer_secret }}"
