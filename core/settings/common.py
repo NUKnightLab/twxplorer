@@ -1,6 +1,6 @@
 """Common settings and globals."""
 from os.path import abspath, dirname, join
-form os import environ as env
+from os import environ as env
 
 # Maximum number of tweets to retrieve per search session
 TWITTER_SEARCH_LIMIT = 500
