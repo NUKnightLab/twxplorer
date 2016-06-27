@@ -9,7 +9,7 @@ init_env_common:
   APPLICATION_DOMAINS: "{{ domains }}" # space-delimited
   DB_ENGINE__DEFAULT: "mongo"
   DB_NAME__DEFAULT: "{{ project_name }}"
-  DB_HOST__DEFAULT: "prod-mongo1.knilab.com"
+  DB_HOST__DEFAULT: "{{ env }}-mongo1.knilab.com"
   DB_PORT__DEFAULT: "27017"
   FLASK_SETTINGS_MODULE: "core.settings"
   FLASK_SETTINGS_FILE: "core/settings.py"
