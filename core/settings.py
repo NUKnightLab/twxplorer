@@ -6,7 +6,7 @@ from os import environ as env
 TWITTER_SEARCH_LIMIT = 500
 
 SECRET_KEY = env['FLASK_SECRET_KEY']
-STATIC_URL = 'http://media.knightlab.com/twxplorer/'
+STATIC_URL = env['STATIC_URL']
 
 DATABASES = {
     'default': {
