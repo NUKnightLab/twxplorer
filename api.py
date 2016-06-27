@@ -20,25 +20,21 @@ import lxml.html
 import nltk
 
 
-# Import settings module
-#if __name__ == "__main__":
-#    if not os.environ.get('FLASK_SETTINGS_MODULE', ''):
-#        os.environ['FLASK_SETTINGS_MODULE'] = 'core.settings.dev'
+settings_module = os.environ.get('FLASK_SETTINGS_MODULE')
 
-#settings_module = os.environ.get('FLASK_SETTINGS_MODULE')
+try:
+    importlib.import_module(settings_module)
+except ImportError, e:
+    raise ImportError("Could not import settings module '%s': %s" % (settings_module, e))
 
-#try:
-#    importlib.import_module(settings_module)
-#except ImportError, e:
-#    raise ImportError("Could not import settings module '%s': %s" % (settings_module, e))
 
 from twxplorer.connection import _search, _session, _tweets, _url, _list
 from twxplorer import extract, twutil
 
 app = Flask(__name__)
-app.config.from_envvar('FLASK_SETTINGS_MODULE')
-settings = app.config
-#settings = sys.modules[settings_module]
+app.config.from_envvar('FLASK_SETTINGS_FILE')
+
+settings = sys.modules[settings_module]
 
 html_parser = lxml.html.HTMLParser(encoding='utf-8')
 
