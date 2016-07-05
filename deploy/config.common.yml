@@ -1,5 +1,6 @@
-# git-deploy 1.0.1
 project_name: twxplorer
+gitdeploy_version: "1.0.1"
+
 port: 9006
 python: python2
 type: flask
