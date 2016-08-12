@@ -1,5 +1,5 @@
 project_name: twxplorer
-gitdeploy_version: "1.0.3"
+gitdeploy_version: "1.0.4"
 
 port: 9006
 python: python2
