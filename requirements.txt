@@ -8,7 +8,7 @@ beautifulsoup4==4.3.0
 #boto==2.10.0
 #itsdangerous==0.22
 lxml==4.5.1
-#nltk==2.0.4
+nltk==3.1
 #paramiko==1.11.0
 #pycrypto==2.6
 pymongo==2.5.2
