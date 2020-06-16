@@ -103,29 +103,26 @@ def get_oauth():
     Get a tweepy OAuthHander
     """
     cb_url = 'http://'+request.host+url_for('auth_verify')
-
     # Create the oauth handler
     oauth = tweepy.OAuthHandler(
         settings.TWITTER_CONSUMER_KEY,
         settings.TWITTER_CONSUMER_SECRET,
-        callback=cb_url,
-        secure=True)
-
-    key = session.get('request_token_key')
+        callback=cb_url)
+    key = session.get('request_token')
     secret = session.get('request_token_secret')
     if key and secret:
-        oauth.set_request_token(key, secret)
-
-    key = session.get('access_token_key')
+        oauth.request_token = { 'oauth_token' : key,
+                         'oauth_token_secret' : secret }
+    key = session.get('access_token')
     secret = session.get('access_token_secret')
     if key and secret:
         oauth.set_access_token(key, secret)
-
         if not session.get('username'):
             username = oauth.get_username()
             if username:
                 session['username'] = username.lower()
     return oauth
+
 
 @app.route("/auth/", methods=['GET', 'POST'])
 def auth():
@@ -134,8 +131,8 @@ def auth():
     """
     oauth = get_oauth()
     auth_url = oauth.get_authorization_url()
-    session['request_token_key'] = oauth.request_token.key
-    session['request_token_secret'] = oauth.request_token.secret
+    session['request_token'] = oauth.request_token['oauth_token']
+    session['request_token_secret'] = oauth.request_token['oauth_token_secret']
     return redirect(auth_url)
 
 
@@ -146,11 +143,18 @@ def auth_verify():
     """
     if request.args.get('denied'):
         return redirect(url_for('logout'))
-
     oauth = get_oauth()
-    oauth.get_access_token(verifier=request.args.get('oauth_verifier'))
-    session['access_token_key'] = oauth.access_token.key
-    session['access_token_secret'] = oauth.access_token.secret
+    verifier = request.args.get('oauth_verifier')
+    token = session.get('request_token')
+    oauth.request_token = { 'oauth_token' : token,
+                         'oauth_token_secret' : verifier }
+    oauth.get_access_token(verifier=verifier)
+    session['access_token'] = oauth.access_token
+    session['access_token_secret'] = oauth.access_token_secret
+    # http://docs.tweepy.org/en/3.7.0/auth_tutorial.html
+    # we could save these and then re-auth this way:
+    # oauth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    # oauth.set_access_token(access_token, access_token_secret)
 
     # Get user language
     try:
@@ -167,8 +171,8 @@ def logout():
     """
     Logout by cleaning session
     """
-    for key in ['request_token_key', 'request_token_secret', \
-        'access_token_key', 'access_token_secret', 'username']:
+    for key in ['request_token', 'request_token_secret', \
+        'access_token', 'access_token_secret', 'username']:
         if key in session:
             session.pop(key)
     return redirect(url_for('index'))
@@ -912,6 +916,6 @@ def urls():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, use_debugger=True, debug=True)
 
 
