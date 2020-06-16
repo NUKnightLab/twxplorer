@@ -3,7 +3,7 @@ import sys
 import os
 import re
 import string
-import HTMLParser
+from html.parser import HTMLParser
 import nltk
 from nltk.corpus import stopwords
 from nltk import SnowballStemmer
@@ -65,7 +65,7 @@ _re_punctuation = re.compile(u'[%s’]+' % string.punctuation.replace('@', ''), 
 _re_extraspace = re.compile(r'( )+')
 
 # htmlparser
-_htmlparser = HTMLParser.HTMLParser()
+_htmlparser = HTMLParser()
 
 def get_stopwords(language='en'):
     """Return the stopwords for language"""
