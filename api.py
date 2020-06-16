@@ -14,7 +14,6 @@ import datetime
 import bson
 import tweepy
 import pymongo
-import urllib2
 import urllib
 import lxml.html
 import nltk
@@ -24,7 +23,7 @@ settings_module = os.environ.get('FLASK_SETTINGS_MODULE')
 
 try:
     importlib.import_module(settings_module)
-except ImportError, e:
+except ImportError as e:
     raise ImportError("Could not import settings module '%s': %s" % (settings_module, e))
 
 
@@ -282,12 +281,12 @@ def _shorten_url(url):
         if settings.BITLY_DOMAIN  :
             params['domain'] = settings.BITLY_DOMAIN
         bitly_call = 'https://api-ssl.bitly.com/v3/shorten?' + urllib.urlencode(params);
-        response = json.loads(urllib2.urlopen(urllib2.Request(bitly_call)).read())
+        response = json.loads(urllib.request.urlopen(urllib.request.Request(bitly_call)).read())
 
         if response['status_code'] == 200:
             url = response['data']['url']
         else:
-            print "bitly error: %s" % response['status_txt']
+            print("bitly error: %s" % response['status_txt'])
     return url
 
 #
@@ -308,7 +307,7 @@ def index(name=''):
     """
     try:
         return render_template('index.html')
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('index.html', error=str(e))
 
@@ -337,7 +336,7 @@ def search(session_id=''):
         return render_template('search.html', session_id=session_id,
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('search.html', session_id=session_id,
             snapshot_owner=snapshot_owner,
@@ -401,11 +400,11 @@ def lists(session_id=''):
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_r['lists'], list_map=json.dumps(list_map))
-    except tweepy.TweepError, e:
+    except tweepy.TweepError as e:
         traceback.print_exc()
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, error=str(e))
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, error=str(e))
@@ -421,7 +420,7 @@ def history():
         searches, lists = _get_saved_results()
         return render_template('history.html',
             searches=searches, lists=lists)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('history.html', error=str(e))
 
@@ -656,10 +655,10 @@ def analyze():
         _session.save(session_r)
 
         return _jsonify(session=session_r)
-    except tweepy.TweepError, e:
+    except tweepy.TweepError as e:
         traceback.print_exc()
         return _jsonify(error=e.message[0]['message'])
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -772,7 +771,7 @@ def filter(session_id):
             tweets=tweets,
             retweets=retweets
         )
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -807,7 +806,7 @@ def history_update(session_id):
             {'$set': params}, multi=False)
 
         return _jsonify(**params)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -871,7 +870,7 @@ def history_delete():
             {'_id': {'$in': [bson.ObjectId(x) for x in search_ids]}})
 
         return _jsonify(deleted=session_ids)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -895,11 +894,11 @@ def urls():
             if not r:
                 r = {'url': url, 'title': ''}
                 try:
-                    resp = urllib2.urlopen(url, timeout=5)
+                    resp = urllib.request.urlopen(url, timeout=5)
                     element = lxml.html.parse(resp, html_parser)
                     if element:
                         r['title'] = element.find(".//title").text.strip()
-                except Exception, e:
+                except Exception as e:
                     pass
 
                 r['_id'] = _url.insert(r, manipulate=True)
@@ -907,7 +906,7 @@ def urls():
             info.append(r)
 
         return _jsonify(info=info)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
