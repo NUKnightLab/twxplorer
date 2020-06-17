@@ -547,7 +547,8 @@ def analyze():
             trigram_counter.update(tweet['stems_3'])
 
         # Ignore trigrams that only appear once
-        for g, n in trigram_counter.items():
+        items = list(trigram_counter.items())
+        for g, n in items:
             if n < 2:
                 del trigram_counter[g]
                 del stem_map[g]
@@ -562,7 +563,7 @@ def analyze():
             stems = []
 
             for tokens in tweet['tokens']:
-                gram_list = nltk.ngrams(tokens, 2)
+                gram_list = list(nltk.ngrams(tokens, 2))
                 stem_list = extract.stems_from_grams(gram_list, stemmer)
 
                 last_i = len(gram_list) - 1
@@ -591,7 +592,8 @@ def analyze():
             bigram_counter.update(tweet['stems_2'])
 
         # Ignore bigrams that only appear once
-        for g, n in bigram_counter.items():
+        items = list(bigram_counter.items())
+        for g, n in items:
             if n < 2:
                 del bigram_counter[g]
                 del stem_map[g]
@@ -604,7 +606,7 @@ def analyze():
             stems = []
 
             for tokens in tweet['tokens']:
-                gram_list = nltk.ngrams(tokens, 1)
+                gram_list = list(nltk.ngrams(tokens, 1))
                 stem_list = extract.stems_from_grams(gram_list, stemmer)
 
                 last_i = len(gram_list) - 1
@@ -647,7 +649,7 @@ def analyze():
             del tweet['stems_3']
 
         # Update session
-        for stem, c in stem_map.iteritems():
+        for stem, c in stem_map.items():
             session_r['stem_map'][' '.join(stem)] = \
                 [' '.join(k) for k, v in c.most_common()]
 

@@ -83,6 +83,7 @@ def normalize(s):
     """Return normalized version of string."""
     # s = s.encode('ascii', 'replace').replace('?', '').lower() # doesn't treat non-English very well.
     s = filter(lambda x: unicodedata.category(x)[0] != 'C',s.lower()) # assumes we're not dealing with any CJKV languages
+    s = ''.join(s)
     norm = ''
     for item in _re_entity.split(s):
         if _re_entity.match(item):
