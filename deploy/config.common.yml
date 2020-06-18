@@ -2,7 +2,7 @@ project_name: twxplorer
 gitdeploy_version: "1.0.5"
 
 port: 9006
-python: python2
+python: python3
 type: flask
 
 # these will be merged with deployment-specific env into init_env
