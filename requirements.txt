@@ -14,4 +14,4 @@ nltk==3.4
 pymongo==2.5.2
 tweepy==3.7.0
 #wsgiref==0.1.2
-gunicorn==19.3.0
+gunicorn==19.5.0
