@@ -284,7 +284,7 @@ def _shorten_url(url):
         }
         if settings.BITLY_DOMAIN  :
             params['domain'] = settings.BITLY_DOMAIN
-        bitly_call = 'https://api-ssl.bitly.com/v3/shorten?' + urllib.urlencode(params);
+        bitly_call = 'https://api-ssl.bitly.com/v3/shorten?' + urllib.parse.urlencode(params);
         response = json.loads(urllib.request.urlopen(urllib.request.Request(bitly_call)).read())
 
         if response['status_code'] == 200:
@@ -846,7 +846,7 @@ def history_tweet(session_id):
             list_name = list_name[:-(n - 140 + 4)]+'...'
             msg = tmpl % (list_name, session_r['share_url'])
 
-    tweetUrl = 'https://twitter.com/share?'+urllib.urlencode({
+    tweetUrl = 'https://twitter.com/share?'+urllib.parse.urlencode({
         'text': msg, 'url': 'false' })
 
     return redirect(tweetUrl)
