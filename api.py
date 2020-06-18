@@ -102,7 +102,7 @@ def get_oauth():
     """
     Get a tweepy OAuthHander
     """
-    cb_url = 'http://'+request.host+url_for('auth_verify')
+    cb_url = 'https://'+request.host+url_for('auth_verify')
     # Create the oauth handler
     oauth = tweepy.OAuthHandler(
         settings.TWITTER_CONSUMER_KEY,
