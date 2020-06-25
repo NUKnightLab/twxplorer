@@ -14,7 +14,6 @@ import datetime
 import bson
 import tweepy
 import pymongo
-import urllib2
 import urllib
 import lxml.html
 import nltk
@@ -24,7 +23,7 @@ settings_module = os.environ.get('FLASK_SETTINGS_MODULE')
 
 try:
     importlib.import_module(settings_module)
-except ImportError, e:
+except ImportError as e:
     raise ImportError("Could not import settings module '%s': %s" % (settings_module, e))
 
 
@@ -103,30 +102,27 @@ def get_oauth():
     """
     Get a tweepy OAuthHander
     """
-    cb_url = 'http://'+request.host+url_for('auth_verify')
-
+    cb_url = 'https://'+request.host+url_for('auth_verify')
     # Create the oauth handler
     oauth = tweepy.OAuthHandler(
         settings.TWITTER_CONSUMER_KEY,
         settings.TWITTER_CONSUMER_SECRET,
-        callback=cb_url,
-        secure=True)
-
-    key = session.get('request_token_key')
+        callback=cb_url)
+    key = session.get('request_token')
     secret = session.get('request_token_secret')
     if key and secret:
-        oauth.set_request_token(key, secret)
-
-    key = session.get('access_token_key')
+        oauth.request_token = { 'oauth_token' : key,
+                         'oauth_token_secret' : secret }
+    key = session.get('access_token')
     secret = session.get('access_token_secret')
     if key and secret:
         oauth.set_access_token(key, secret)
-
         if not session.get('username'):
             username = oauth.get_username()
             if username:
                 session['username'] = username.lower()
     return oauth
+
 
 @app.route("/auth/", methods=['GET', 'POST'])
 def auth():
@@ -135,8 +131,8 @@ def auth():
     """
     oauth = get_oauth()
     auth_url = oauth.get_authorization_url()
-    session['request_token_key'] = oauth.request_token.key
-    session['request_token_secret'] = oauth.request_token.secret
+    session['request_token'] = oauth.request_token['oauth_token']
+    session['request_token_secret'] = oauth.request_token['oauth_token_secret']
     return redirect(auth_url)
 
 
@@ -147,11 +143,18 @@ def auth_verify():
     """
     if request.args.get('denied'):
         return redirect(url_for('logout'))
-
     oauth = get_oauth()
-    oauth.get_access_token(verifier=request.args.get('oauth_verifier'))
-    session['access_token_key'] = oauth.access_token.key
-    session['access_token_secret'] = oauth.access_token.secret
+    verifier = request.args.get('oauth_verifier')
+    token = session.get('request_token')
+    oauth.request_token = { 'oauth_token' : token,
+                         'oauth_token_secret' : verifier }
+    oauth.get_access_token(verifier=verifier)
+    session['access_token'] = oauth.access_token
+    session['access_token_secret'] = oauth.access_token_secret
+    # http://docs.tweepy.org/en/3.7.0/auth_tutorial.html
+    # we could save these and then re-auth this way:
+    # oauth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    # oauth.set_access_token(access_token, access_token_secret)
 
     # Get user language
     try:
@@ -168,8 +171,8 @@ def logout():
     """
     Logout by cleaning session
     """
-    for key in ['request_token_key', 'request_token_secret', \
-        'access_token_key', 'access_token_secret', 'username']:
+    for key in ['request_token', 'request_token_secret', \
+        'access_token', 'access_token_secret', 'username']:
         if key in session:
             session.pop(key)
     return redirect(url_for('index'))
@@ -281,13 +284,13 @@ def _shorten_url(url):
         }
         if settings.BITLY_DOMAIN  :
             params['domain'] = settings.BITLY_DOMAIN
-        bitly_call = 'https://api-ssl.bitly.com/v3/shorten?' + urllib.urlencode(params);
-        response = json.loads(urllib2.urlopen(urllib2.Request(bitly_call)).read())
+        bitly_call = 'https://api-ssl.bitly.com/v3/shorten?' + urllib.parse.urlencode(params);
+        response = json.loads(urllib.request.urlopen(urllib.request.Request(bitly_call)).read())
 
         if response['status_code'] == 200:
             url = response['data']['url']
         else:
-            print "bitly error: %s" % response['status_txt']
+            print("bitly error: %s" % response['status_txt'])
     return url
 
 #
@@ -308,7 +311,7 @@ def index(name=''):
     """
     try:
         return render_template('index.html')
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('index.html', error=str(e))
 
@@ -337,7 +340,7 @@ def search(session_id=''):
         return render_template('search.html', session_id=session_id,
             snapshot_owner=snapshot_owner,
             languages=extract.stopword_languages, saved_results=saved_results)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('search.html', session_id=session_id,
             snapshot_owner=snapshot_owner,
@@ -401,11 +404,11 @@ def lists(session_id=''):
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, saved_results=saved_results,
             lists=list_r['lists'], list_map=json.dumps(list_map))
-    except tweepy.TweepError, e:
+    except tweepy.TweepError as e:
         traceback.print_exc()
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, error=str(e))
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('lists.html', session_id=session_id,
             languages=extract.stopword_languages, error=str(e))
@@ -421,7 +424,7 @@ def history():
         searches, lists = _get_saved_results()
         return render_template('history.html',
             searches=searches, lists=lists)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return render_template('history.html', error=str(e))
 
@@ -544,7 +547,8 @@ def analyze():
             trigram_counter.update(tweet['stems_3'])
 
         # Ignore trigrams that only appear once
-        for g, n in trigram_counter.items():
+        items = list(trigram_counter.items())
+        for g, n in items:
             if n < 2:
                 del trigram_counter[g]
                 del stem_map[g]
@@ -559,7 +563,7 @@ def analyze():
             stems = []
 
             for tokens in tweet['tokens']:
-                gram_list = nltk.ngrams(tokens, 2)
+                gram_list = list(nltk.ngrams(tokens, 2))
                 stem_list = extract.stems_from_grams(gram_list, stemmer)
 
                 last_i = len(gram_list) - 1
@@ -588,7 +592,8 @@ def analyze():
             bigram_counter.update(tweet['stems_2'])
 
         # Ignore bigrams that only appear once
-        for g, n in bigram_counter.items():
+        items = list(bigram_counter.items())
+        for g, n in items:
             if n < 2:
                 del bigram_counter[g]
                 del stem_map[g]
@@ -601,7 +606,7 @@ def analyze():
             stems = []
 
             for tokens in tweet['tokens']:
-                gram_list = nltk.ngrams(tokens, 1)
+                gram_list = list(nltk.ngrams(tokens, 1))
                 stem_list = extract.stems_from_grams(gram_list, stemmer)
 
                 last_i = len(gram_list) - 1
@@ -644,7 +649,7 @@ def analyze():
             del tweet['stems_3']
 
         # Update session
-        for stem, c in stem_map.iteritems():
+        for stem, c in stem_map.items():
             session_r['stem_map'][' '.join(stem)] = \
                 [' '.join(k) for k, v in c.most_common()]
 
@@ -656,10 +661,10 @@ def analyze():
         _session.save(session_r)
 
         return _jsonify(session=session_r)
-    except tweepy.TweepError, e:
+    except tweepy.TweepError as e:
         traceback.print_exc()
         return _jsonify(error=e.message[0]['message'])
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -772,7 +777,7 @@ def filter(session_id):
             tweets=tweets,
             retweets=retweets
         )
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -807,7 +812,7 @@ def history_update(session_id):
             {'$set': params}, multi=False)
 
         return _jsonify(**params)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -841,7 +846,7 @@ def history_tweet(session_id):
             list_name = list_name[:-(n - 140 + 4)]+'...'
             msg = tmpl % (list_name, session_r['share_url'])
 
-    tweetUrl = 'https://twitter.com/share?'+urllib.urlencode({
+    tweetUrl = 'https://twitter.com/share?'+urllib.parse.urlencode({
         'text': msg, 'url': 'false' })
 
     return redirect(tweetUrl)
@@ -871,7 +876,7 @@ def history_delete():
             {'_id': {'$in': [bson.ObjectId(x) for x in search_ids]}})
 
         return _jsonify(deleted=session_ids)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
@@ -895,11 +900,11 @@ def urls():
             if not r:
                 r = {'url': url, 'title': ''}
                 try:
-                    resp = urllib2.urlopen(url, timeout=5)
+                    resp = urllib.request.urlopen(url, timeout=5)
                     element = lxml.html.parse(resp, html_parser)
                     if element:
                         r['title'] = element.find(".//title").text.strip()
-                except Exception, e:
+                except Exception as e:
                     pass
 
                 r['_id'] = _url.insert(r, manipulate=True)
@@ -907,12 +912,12 @@ def urls():
             info.append(r)
 
         return _jsonify(info=info)
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc()
         return _jsonify(error=str(e))
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, use_debugger=True, debug=True)
 
 

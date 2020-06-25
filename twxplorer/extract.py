@@ -3,7 +3,7 @@ import sys
 import os
 import re
 import string
-import HTMLParser
+from html.parser import HTMLParser
 import nltk
 from nltk.corpus import stopwords
 from nltk import SnowballStemmer
@@ -65,7 +65,7 @@ _re_punctuation = re.compile(u'[%s’]+' % string.punctuation.replace('@', ''), 
 _re_extraspace = re.compile(r'( )+')
 
 # htmlparser
-_htmlparser = HTMLParser.HTMLParser()
+_htmlparser = HTMLParser()
 
 def get_stopwords(language='en'):
     """Return the stopwords for language"""
@@ -83,6 +83,7 @@ def normalize(s):
     """Return normalized version of string."""
     # s = s.encode('ascii', 'replace').replace('?', '').lower() # doesn't treat non-English very well.
     s = filter(lambda x: unicodedata.category(x)[0] != 'C',s.lower()) # assumes we're not dealing with any CJKV languages
+    s = ''.join(s)
     norm = ''
     for item in _re_entity.split(s):
         if _re_entity.match(item):

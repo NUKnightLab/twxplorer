@@ -139,7 +139,7 @@ function unshare_snapshot() {
 }
 
 function tweet_snapshot() {
-    document.location.href = "/history/tweet/"+_session._id+'/';
+    window.open("/history/tweet/"+_session._id+'/', 'Share twXplorer snapshot');
 }
 
 function initialize() {
