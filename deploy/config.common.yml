@@ -2,7 +2,7 @@ project_name: twxplorer
 gitdeploy_version: "1.0.5"
 
 port: 9006
-python: python3
+python: python3.7
 type: flask
 
 # these will be merged with deployment-specific env into init_env
@@ -33,7 +33,7 @@ env_file: "{{ deploy_dir }}/.env"
 envrc_file: "{{ deploy_dir }}/.envrc"
 project_repo: "git@github.com:NUKnightLab/{{ project_name }}.git"
 requirements_file: "{{ deploy_dir }}/requirements.txt"
-virtualenv: "{{ virtualenv_root }}/{{ project_name }}"
+virtualenv: "{{ virtualenv_root }}/venv"
 wsgi_application: "core.wsgi:application"
 service_name: "{{ project_name }}"
 static_service: "s3"
@@ -43,7 +43,7 @@ static_dest: "s3://{{ static_bucket }}/{{ project_name }}"
 # Configs common to all projects
 application_user: apps
 install_root: /home/{{ application_user }}/sites
-virtualenv_root: /home/{{ application_user }}/env
+virtualenv_root: "{{ deploy_dir }}"
 
 # environment keys must match deployment branch names. Value is the name
 # of the branch to be merged into this environment during deployment.
