@@ -1,12 +1,16 @@
 project_name: twxplorer
-gitdeploy_version: "1.0.5"
+service_name: "{{ project_name|lower }}"
+gitdeploy_version: "1.0.6"
+python_version: "3.7.7"
+python: /home/apps/sites/twxplorer/.venv/bin/python
+service_port: "{{ twxplorer_port }}"
 
-port: 9006
-python: python3.7
-type: flask
+playbooks:
+  - playbook.deploy-repo.yml
+  - playbook.deploy-web.yml
+  - playbook.restart.yml
 
-# these will be merged with deployment-specific env into init_env
-init_env_common:
+init_env:
   PROJECT_NAME: "{{ project_name }}"
   APPLICATION_DOMAINS: "{{ domains }}" # space-delimited
   DB_ENGINE__DEFAULT: "mongo"
@@ -21,32 +25,16 @@ init_env_common:
   BITLY_USERNAME: "{{ vault_bitly_username }}"
   BITLY_APIKEY: "{{ vault_bitly_apikey }}"
   BITLY_DOMAIN: "{{ vault_bitly_domain }}"
+  STATIC_URL: "/"
 
-static_dir: "{{ deploy_dir }}/static"
-application_dir: "{{ deploy_dir }}"
 
-# Configs below will not usually change
-nginx_conf: "{{ deploy_dir }}/nginx/conf.d/{{ project_name }}.conf"
+install_root: "/home/apps/sites"
 deploy_dir: "{{ install_root }}/{{ project_name }}"
-env_run_script: "direnv exec {{ deploy_dir }}"
+application_dir: "{{ deploy_dir }}"
 env_file: "{{ deploy_dir }}/.env"
 envrc_file: "{{ deploy_dir }}/.envrc"
+virtualenv: "{{ deploy_dir }}/.venv"
 project_repo: "git@github.com:NUKnightLab/{{ project_name }}.git"
 requirements_file: "{{ deploy_dir }}/requirements.txt"
-virtualenv: "{{ virtualenv_root }}/venv"
 wsgi_application: "core.wsgi:application"
-service_name: "{{ project_name }}"
-static_service: "s3"
-static_dest: "s3://{{ static_bucket }}/{{ project_name }}"
-
-
-# Configs common to all projects
-application_user: apps
-install_root: /home/{{ application_user }}/sites
-virtualenv_root: "{{ deploy_dir }}"
-
-# environment keys must match deployment branch names. Value is the name
-# of the branch to be merged into this environment during deployment.
-supported_envs:
-  stg: master
-  prd: stg
+static_root: "{{ application_dir }}/static"
