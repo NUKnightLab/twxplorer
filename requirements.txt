@@ -3,7 +3,7 @@ Flask==0.10.1
 Jinja2==2.7
 MarkupSafe==0.18
 PyYAML==3.10
-Werkzeug==0.9.3
+Werkzeug==0.15.5
 beautifulsoup4==4.3.0
 #boto==2.10.0
 #itsdangerous==0.22
